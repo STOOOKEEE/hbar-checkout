@@ -8,28 +8,28 @@ Records dated before 2026-10-02 were recorded under the former name SaucerPay. T
 
 ## Fresh public scaffold — 2026-10-02
 
-Public source commit [`56a6d0e`](https://github.com/STOOOKEEE/hbar-checkout/commit/56a6d0e87e8524fad052c88e3d8a87b264011686) was generated twice with `create-scaffold-hbar@0.4.1`. That commit is the frontend redesign: landing page at `/`, checkout workspace at `/workspace`, motion components and a new `lenis` dependency in `packages/nextjs`. It supersedes the same-day run of `0a6ef84` (HBAR Checkout rename), which passed the same steps. Each generation ran in a new empty `/tmp` directory with no env files, no keys and no local template override. Only a throwaway Git identity was supplied, through a temporary `GIT_CONFIG_GLOBAL` file:
+Public source commit [`8bb8daf`](https://github.com/STOOOKEEE/hbar-checkout/commit/8bb8dafe8e73b157a0bcfe75acebe27aa41af09f) was generated twice with `create-scaffold-hbar@0.4.1`. That commit returns to a minimal frontend: the checkout workspace is back at `/`, and the landing page, motion components and `lenis` dependency are removed. It supersedes the same-day run of `56a6d0e` (animated landing at `/`, workspace at `/workspace`), which in turn superseded `0a6ef84` (HBAR Checkout rename); both passed the same steps. Each generation ran in a new empty `/tmp` directory with no env files, no keys and no local template override. Only a throwaway Git identity was supplied, through a temporary `GIT_CONFIG_GLOBAL` file:
 
 ```bash
 npm create scaffold-hbar@latest -- --template STOOOKEEE/hbar-checkout --destination app \
   --frontend nextjs-app --solidity-framework hardhat --network testnet \
   --package-manager npm --skip-hedera-skills --ci
 cd app && npm ci && npm run lint && npm test && npm run build
-PORT=3060 npm start &   # 3061 for the Node 20 run
-SMOKE_ORIGIN=http://localhost:3060 node scripts/smoke.mjs
-curl http://localhost:3060/
+PORT=3070 npm start &   # 3071 for the Node 20 run
+SMOKE_ORIGIN=http://localhost:3070 node scripts/smoke.mjs
+curl http://localhost:3070/
 ```
 
-The generated tree contains `packages/nextjs/components/motion/` (`CountUp`, `DriftText`, `Glow`, `Marquee`, `Reveal`, `SmoothScroll`, `WordFill`, `useScrollProgress`) and `packages/nextjs/app/theme.css`. The CLI's `npm install --legacy-peer-deps` kept `lenis` 1.3.26 in the lockfile and `node_modules`. `next build` downloads the `next/font/google` fonts (Inter, Space Grotesk), so it needs network access, like the install.
+The generated tree has no `packages/nextjs/components/motion/`, `packages/nextjs/components/landing/` or `packages/nextjs/app/workspace/`, and `lenis` appears in neither `packages/nextjs/package.json`, the lockfile nor `node_modules`. `packages/nextjs/components/` holds `PayWithHbar.tsx`, `Payment.tsx`, `QuotePreview.tsx` and `Workspace.tsx`. `next build` downloads the `next/font/google` font (Inter), so it needs network access, like the install.
 
 | Step                                      | Node 22.23.2 / npm 10.9.8                                     | Node 20.18.3 / npm 10.9.8                                                                                           |
 | ----------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Generation (CLI installs and commits)     | Pass                                                          | Pass                                                                                                                |
-| `npm ci`                                  | Pass, 742 packages                                            | Pass, 741 packages; non-blocking `EBADENGINE` warnings (vite 7, chokidar/readdirp 5, `@wallet-standard/base`)      |
+| `npm ci`                                  | Pass, 741 packages                                            | Pass, 740 packages; non-blocking `EBADENGINE` warnings (vite 7, chokidar/readdirp 5, `@wallet-standard/base`)      |
 | `npm run lint` (ESLint + both typechecks) | Pass                                                          | Pass                                                                                                                |
 | `npm test`                                | Pass: 38 TypeScript, 11 contract                              | Pass: 38 TypeScript, 11 contract                                                                                    |
-| `npm run build`                           | Pass; routes include `/` and `/workspace` (static)            | Pass, same routes                                                                                                   |
-| `npm start` + smoke                       | Pass, 8 OK lines: `/`, `/workspace`, `/guide`, `/examples`, `/pay/<id>`, invalid network, preview limits, fulfill rejections | Pass, same 8 OK lines                                  |
+| `npm run build`                           | Pass; routes `/`, `/guide`, `/examples` (static), `/pay/[id]` and the API routes; no `/workspace` | Pass, same routes                                                               |
+| `npm start` + smoke                       | Pass, 7 OK lines: `/`, `/guide`, `/examples`, `/pay/<id>`, invalid network, preview limits, fulfill rejections; `/workspace` returns 404 | Pass, same 7 OK lines; `/workspace` 404 |
 | Served `<title>` of `/`                   | `HBAR Checkout · Exact-amount checkout on Hedera`             | Same                                                                                                                |
 
 ## Fresh public scaffold — 2026-10-01
