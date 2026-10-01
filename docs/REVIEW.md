@@ -18,7 +18,7 @@ Follow [Getting started](GETTING_STARTED.md) from an empty parent folder. The su
 npx create-scaffold-hbar@latest --template STOOOKEEE/hbar-checkout
 ```
 
-Then run lint, tests, build, start and smoke as documented. [Validation](VALIDATION.md#fresh-public-scaffold--2026-10-02) records a fresh generator/install/lint/test/build/boot/smoke pass for public source commit `0a6ef84` (`STOOOKEEE/hbar-checkout`) on Node 22.23.2 and Node 20.18.3, covering the HCS log, drop-in component, fulfill endpoint and +25 % gas rule.
+Then run lint, tests, build, start and smoke as documented. [Validation](VALIDATION.md#fresh-public-scaffold--2026-10-02) records a fresh generator/install/lint/test/build/boot/smoke pass for public source commit `56a6d0e` (`STOOOKEEE/hbar-checkout`, frontend redesign with the landing page at `/` and the workspace at `/workspace`) on Node 22.23.2 and Node 20.18.3.
 
 ## 3. Inspect what is reusable
 

@@ -8,37 +8,29 @@ Records dated before 2026-10-02 were recorded under the former name SaucerPay. T
 
 ## Fresh public scaffold — 2026-10-02
 
-Public source commit [`0a6ef84`](https://github.com/STOOOKEEE/hbar-checkout/commit/0a6ef84ee619a5ae6075c6e697c97d6ecad53859) was generated twice with `create-scaffold-hbar@0.4.1`. That commit is the HBAR Checkout rename, with `@hbar-checkout/*` workspaces and the `HbarCheckout` contract. Each generation ran in a new empty `/tmp` directory with no env files, no keys and no local template override. Only a throwaway Git identity was supplied, through a temporary `GIT_CONFIG_GLOBAL` file:
+Public source commit [`56a6d0e`](https://github.com/STOOOKEEE/hbar-checkout/commit/56a6d0e87e8524fad052c88e3d8a87b264011686) was generated twice with `create-scaffold-hbar@0.4.1`. That commit is the frontend redesign: landing page at `/`, checkout workspace at `/workspace`, motion components and a new `lenis` dependency in `packages/nextjs`. It supersedes the same-day run of `0a6ef84` (HBAR Checkout rename), which passed the same steps. Each generation ran in a new empty `/tmp` directory with no env files, no keys and no local template override. Only a throwaway Git identity was supplied, through a temporary `GIT_CONFIG_GLOBAL` file:
 
 ```bash
 npm create scaffold-hbar@latest -- --template STOOOKEEE/hbar-checkout --destination app \
   --frontend nextjs-app --solidity-framework hardhat --network testnet \
   --package-manager npm --skip-hedera-skills --ci
 cd app && npm ci && npm run lint && npm test && npm run build
-PORT=3040 npm start &   # 3041 for the Node 20 run
-SMOKE_ORIGIN=http://localhost:3040 node scripts/smoke.mjs
-curl http://localhost:3040/api/config
-curl "http://localhost:3040/api/preview?preset=testnet-usdc&amount=1&slippageBps=50"
+PORT=3060 npm start &   # 3061 for the Node 20 run
+SMOKE_ORIGIN=http://localhost:3060 node scripts/smoke.mjs
+curl http://localhost:3060/
 ```
 
-The generated tree has workspaces `@hbar-checkout/checkout`, `@hbar-checkout/contracts` and `@hbar-checkout/nextjs`. It also contains `HbarCheckout.sol`, `PayWithHbar.tsx` and `hcs.ts`. After Prettier formatting of `0a6ef84`, it differs from the source only by changes the CLI makes:
+The generated tree contains `packages/nextjs/components/motion/` (`CountUp`, `DriftText`, `Glow`, `Marquee`, `Reveal`, `SmoothScroll`, `WordFill`, `useScrollProgress`) and `packages/nextjs/app/theme.css`. The CLI's `npm install --legacy-peer-deps` kept `lenis` 1.3.26 in the lockfile and `node_modules`. `next build` downloads the `next/font/google` fonts (Inter, Space Grotesk), so it needs network access, like the install.
 
-- `npm X` prose is rewritten to `npm run X`, which also shifts Markdown table widths.
-- `packageManager` fields are added.
-- `template.json` is consumed.
-- The lockfile is rewritten by `npm install --legacy-peer-deps`.
-
-| Step                                   | Node 22.23.2 / npm 10.9.8                                                                          | Node 20.18.3 / npm 10.9.8                                                                                      |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Generation (CLI installs and commits)  | Pass                                                                                               | Pass                                                                                                           |
-| `npm ci`                               | Pass, 741 packages                                                                                 | Pass, 740 packages; 20 non-blocking `EBADENGINE` warnings (vite 7, chokidar/readdirp 5, `@wallet-standard/base`) |
-| `npm run lint` (ESLint + both typechecks) | Pass                                                                                            | Pass                                                                                                           |
-| `npm test`                             | Pass: 38 TypeScript, 11 contract                                                                   | Pass: 38 TypeScript, 11 contract                                                                               |
-| `npm run build`                        | Pass                                                                                               | Pass                                                                                                           |
-| `npm start` + smoke                    | Pass: `/`, `/guide`, `/examples`, `/pay/<id>` (each asserts `<title>HBAR Checkout`), invalid network, preview limits, fulfill rejections | Pass, same OK lines                                         |
-| Served `<title>`                       | `HBAR Checkout · Exact-amount checkout on Hedera`                                                  | Same                                                                                                           |
-| `/api/config`                          | HTTP 200, testnet, token `0.0.5449`, no checkout (no env)                                          | Same                                                                                                           |
-| `/api/preview?preset=testnet-usdc&amount=1&slippageBps=50` | HTTP 200, live quote: `amountOut` `1000000`, `quotedTinybar` `44054615`, `maximumTinybar` `44274889` | Same values                                                                                |
+| Step                                      | Node 22.23.2 / npm 10.9.8                                     | Node 20.18.3 / npm 10.9.8                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Generation (CLI installs and commits)     | Pass                                                          | Pass                                                                                                                |
+| `npm ci`                                  | Pass, 742 packages                                            | Pass, 741 packages; non-blocking `EBADENGINE` warnings (vite 7, chokidar/readdirp 5, `@wallet-standard/base`)      |
+| `npm run lint` (ESLint + both typechecks) | Pass                                                          | Pass                                                                                                                |
+| `npm test`                                | Pass: 38 TypeScript, 11 contract                              | Pass: 38 TypeScript, 11 contract                                                                                    |
+| `npm run build`                           | Pass; routes include `/` and `/workspace` (static)            | Pass, same routes                                                                                                   |
+| `npm start` + smoke                       | Pass, 8 OK lines: `/`, `/workspace`, `/guide`, `/examples`, `/pay/<id>`, invalid network, preview limits, fulfill rejections | Pass, same 8 OK lines                                  |
+| Served `<title>` of `/`                   | `HBAR Checkout · Exact-amount checkout on Hedera`             | Same                                                                                                                |
 
 ## Fresh public scaffold — 2026-10-01
 
