@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const { ethers, network } = require("hardhat");
 
-describe("SaucerPay payment boundary", function () {
+describe("HbarCheckout payment boundary", function () {
   let merchant, payer, stranger, token, router, checkout, id, expires, deadline;
   beforeEach(async () => {
     [merchant, payer, stranger] = await ethers.getSigners();
@@ -10,7 +10,7 @@ describe("SaucerPay payment boundary", function () {
       await ethers.getContractFactory("MockRouter")
     ).deploy(await token.getAddress());
     checkout = await (
-      await ethers.getContractFactory("SaucerPay")
+      await ethers.getContractFactory("HbarCheckout")
     ).deploy(
       await router.getAddress(),
       stranger.address,

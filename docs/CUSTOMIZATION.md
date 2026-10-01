@@ -2,7 +2,7 @@
 
 [README](../README.md) · [API reference](REFERENCE.md) · [Architecture](ARCHITECTURE.md)
 
-Start from the generated monorepo. Keep the checkout package, the contract and `PayWithHbar`; replace the invoice workspace with your service, product or top-up screen. `@saucerpay/checkout` is a local workspace package, not a public registry dependency.
+Start from the generated monorepo. Keep the checkout package, the contract and `PayWithHbar`; replace the invoice workspace with your service, product or top-up screen. `@hbar-checkout/checkout` is a local workspace package, not a public registry dependency.
 
 The integration has three seams:
 
@@ -49,7 +49,7 @@ import {
   readToken,
   tokenUnits,
   type CheckoutConfig,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 
 export async function createOrderInvoice(
   config: CheckoutConfig,
@@ -92,7 +92,7 @@ Obtain `config` from your configured server (`/api/config`) or `networkConfig("t
 If `HEDERA_TOPIC_ID` is configured, a HashPack merchant can publish a one-line label (≤ 140 characters, check it with `isLabel`) after creating the invoice. The payer page shows it as "Description from the merchant", and **Load my invoices** rebuilds the merchant's recent labelled invoices from the topic. Validate the label and the wallet's `publish` capability before sending `createInvoice`, as the workspace does:
 
 ```ts
-import { encodeInvoiceMessage, type CheckoutConfig } from "@saucerpay/checkout";
+import { encodeInvoiceMessage, type CheckoutConfig } from "@hbar-checkout/checkout";
 import type { Wallet } from "@/lib/wallet";
 
 export async function publishLabel(
@@ -149,7 +149,7 @@ An amount-only preview quote cannot be paid. Discard old quotes when the invoice
 Do not accept a browser-supplied receipt, merchant address or price as authoritative. `verifyInvoicePayment` reads the invoice and the receipt itself, for an EVM hash or a Hedera transaction ID:
 
 ```ts
-import { verifyInvoicePayment } from "@saucerpay/checkout";
+import { verifyInvoicePayment } from "@hbar-checkout/checkout";
 import { getConfig } from "@/lib/server";
 
 export async function fulfillIfPaid(

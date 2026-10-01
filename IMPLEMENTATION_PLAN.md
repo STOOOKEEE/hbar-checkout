@@ -1,4 +1,4 @@
-# SaucerPay implementation plan
+# HBAR Checkout implementation plan
 
 ## Product decision
 
@@ -29,7 +29,7 @@ A swap UI alone is insufficient. The acceptance test is that another developer c
 3. **Integration and UI**: live quote/preflight API, injected EVM wallet, merchant invoice creation, association, shareable payment page and verified receipt. Build/start work without secrets; writes require a deployed testnet checkout contract.
 4. **Developer handoff**: README, architecture, customization example, deployment script, `AGENTS.md`, MIT, CI, smoke checks and clean-scaffold validation using the actual published CLI.
 5. **Testnet evidence**: deploy with a locally configured funded testnet key, exercise the payment path when liquidity permits, record actual transaction hashes and mirror/HashScan links. Do not claim this is complete without executing it.
-6. **Repository delivery**: commit and push the implemented template to `STOOOKEEE/hedera-temlate`; repeat fresh scaffold/install/lint/test/build/start checks against the public repository.
+6. **Repository delivery**: commit and push the implemented template to `STOOOKEEE/hbar-checkout`; repeat fresh scaffold/install/lint/test/build/start checks against the public repository.
 
 ## Constraints and honest limits
 

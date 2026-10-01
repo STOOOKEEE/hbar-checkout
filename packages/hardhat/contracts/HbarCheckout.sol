@@ -12,7 +12,7 @@ interface ITokenBalance {
 
 /// @notice Exact-amount checkout using an immutable SaucerSwap V1 router and settlement token.
 /// @dev On Hedera, msg.value, amounts[0] and refunds are tinybar, not RPC wei.
-contract SaucerPay {
+contract HbarCheckout {
     enum Status { Missing, Open, Paid, Cancelled }
     struct Invoice {
         address merchant;

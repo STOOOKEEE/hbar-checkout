@@ -7,7 +7,7 @@ import {
   PREVIEW_PRESETS,
   type PreviewPreset,
   type Quote,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 import { api, message } from "@/lib/wallet";
 
 /** Reusable read-only conversion UI. Does not sign, reserve funds or fulfill orders. */

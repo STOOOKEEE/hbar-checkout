@@ -4,11 +4,11 @@
 
 **Developer problem:** the product is priced in one HTS asset, but the buyer holds HBAR. A plain payment link cannot perform the conversion. A standalone swap does not bind that conversion to an order's recipient, amount, expiry and receipt.
 
-SaucerPay combines those steps through SaucerSwap's existing liquidity. This is useful when the asset mismatch actually exists. It adds unnecessary complexity if a direct transfer already meets both parties' needs.
+HBAR Checkout combines those steps through SaucerSwap's existing liquidity. This is useful when the asset mismatch actually exists. It adds unnecessary complexity if a direct transfer already meets both parties' needs.
 
 ## 1. Service invoices and payment links
 
-**Observed pattern:** Hedera recognized HashFast, a payment-link project with wallet payments and receipt tracking. Outside Hedera, xMoney offers invoices payable in crypto with settlement in the business's preferred currency. Its published Spinach customer testimonial describes invoicing in USD while customers pay in crypto. These sources show the pattern exists; they do not establish demand for SaucerPay specifically.
+**Observed pattern:** Hedera recognized HashFast, a payment-link project with wallet payments and receipt tracking. Outside Hedera, xMoney offers invoices payable in crypto with settlement in the business's preferred currency. Its published Spinach customer testimonial describes invoicing in USD while customers pay in crypto. These sources show the pattern exists; they do not establish demand for HBAR Checkout specifically.
 
 Sources: [HashFast in Hedera's winners announcement](https://hedera.com/blog/these-are-the-winners-of-the-hello-future-origins-hackathon/), [xMoney Invoices](https://www.xmoney.com/products/invoices).
 
@@ -28,7 +28,7 @@ Sources: [HashFast in Hedera's winners announcement](https://hedera.com/blog/the
 
 Sources: [Novalax's README](https://github.com/VinGitonga/novalax-app), [Hedera x402 winners](https://hedera.com/blog/x402-bounty-on-hedera-winners-announced/).
 
-**Proposed adaptation:** a user buys 20 USDC of service credits using HBAR. The service independently verifies the receipt and credits the correct account once. SaucerPay handles the conversion/payment; the service implements the credit ledger, authentication and usage metering.
+**Proposed adaptation:** a user buys 20 USDC of service credits using HBAR. The service independently verifies the receipt and credits the correct account once. HBAR Checkout handles the conversion/payment; the service implements the credit ledger, authentication and usage metering.
 
 **Current boundary:** this is a prepaid top-up integration, not an x402 facilitator or drop-in x402 payment scheme. Returning unused HBAR from a swap is different from refunding unused service credits. Those service refunds are not implemented here. These named projects are evidence of related developer work, not confirmed adopters.
 

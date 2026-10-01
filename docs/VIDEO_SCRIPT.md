@@ -1,4 +1,4 @@
-# SaucerPay demo video: script and shot list
+# HBAR Checkout demo video: script and shot list
 
 [Submission package](SUBMISSION.md) · [Payment evidence](VALIDATION.md) · [Developer walkthrough](REVIEW.md)
 
@@ -6,7 +6,7 @@
 
 ## Before recording
 
-- Hosted app: https://saucerpay-hedera.vercel.app (testnet USDC `0.0.5449`, checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`, HCS topic `0.0.10814952`).
+- Hosted app: https://hbar-checkout.vercel.app (testnet USDC `0.0.5449`, checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`, HCS topic `0.0.10814952`).
 - **Scene 4 has two versions.** Record version A only after a real HashPack payment works on the hosted app (needs `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` on Vercel and a HashPack testnet account holding about 1 HBAR). Otherwise use version B, which shows only recorded evidence. Never present a wallet click as the origin of a transaction it did not produce.
 - Two browser profiles help: one HashPack account as merchant, another as payer. Keep seed phrases, private keys and personal tabs out of frame.
 - Record at 1920×1080, 30 fps, browser zoom 125–150 % so amounts are readable.
@@ -15,9 +15,9 @@
 
 ### 00:00–00:15 — Hook
 
-**Screen:** your face or the hosted workspace with the title `SaucerPay · Scaffold-HBAR template`. Caption: `Price in USDC. Get paid from HBAR.`
+**Screen:** your face or the hosted workspace with the title `HBAR Checkout · Scaffold-HBAR template`. Caption: `Price in USDC. Get paid from HBAR.`
 
-**Voiceover:** “Your Hedera users hold H-bar. Your business prices in USDC. SaucerPay is a Scaffold-HBAR template that closes that gap: the customer pays in H-bar, and the merchant receives the exact USDC amount, in one transaction.”
+**Voiceover:** “Your Hedera users hold H-bar. Your business prices in USDC. HBAR Checkout is a Scaffold-HBAR template that closes that gap: the customer pays in H-bar, and the merchant receives the exact USDC amount, in one transaction.”
 
 ### 00:15–00:40 — Who it is for and why SaucerSwap is load-bearing
 
@@ -35,7 +35,7 @@
 
 **Version A (live HashPack payment):** open the payment link in the payer profile → **Get payment quote** → show estimated and maximum HBAR → wallet **HashPack** → pay → “Settled and verified”.
 
-**Version B (recorded evidence):** open the [paid USDC invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) and zoom on `Paid`, `1 USDC`, `0.43988881 HBAR converted`, `0.00219945 HBAR returned`, then the [mirror-node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8).
+**Version B (recorded evidence):** open the [paid USDC invoice](https://hbar-checkout.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) and zoom on `Paid`, `1 USDC`, `0.43988881 HBAR converted`, `0.00219945 HBAR returned`, then the [mirror-node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8).
 
 **Voiceover (A):** “The payer gets a quote with a maximum spend, and pays from HashPack. In one transaction the contract swaps through SaucerSwap, checks that the merchant's USDC balance rose by exactly the invoice amount, and refunds unused H-bar. The page then verifies the receipt against the invoice.”
 
@@ -43,7 +43,7 @@
 
 ### 01:40–02:20 — Adopt it in ten lines
 
-**Screen:** terminal: `npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate`, then the `/examples` snippets: `<PayWithHbar invoiceId=… onPaid=… />` and `verifyInvoicePayment(...)` in the fulfill route. Show `README.md` and `AGENTS.md` for a second each.
+**Screen:** terminal: `npx create-scaffold-hbar@latest --template STOOOKEEE/hbar-checkout`, then the `/examples` snippets: `<PayWithHbar invoiceId=… onPaid=… />` and `verifyInvoicePayment(...)` in the fulfill route. Show `README.md` and `AGENTS.md` for a second each.
 
 **Voiceover:** “A developer generates it with one Scaffold-HBAR command. On the frontend, drop in the PayWithHbar component with an invoice ID. On the server, call verifyInvoicePayment before fulfilling the order: it checks the deployment, the invoice and the receipt. The included fulfillment example is idempotent, so a second call never delivers twice. Your app keeps its own order database; the payment path is done.”
 
@@ -57,7 +57,7 @@
 
 **Screen:** hosted URL and GitHub URL. Caption: `Testnet USDC payment verified · Mainnet quote read-only · Unaudited template`.
 
-**Voiceover:** “SaucerPay: price in USDC, get paid from H-bar, on Hedera. The contract is not audited and mainnet signing is disabled; everything shown settles on testnet. Clone it and ship your checkout.”
+**Voiceover:** “HBAR Checkout: price in USDC, get paid from H-bar, on Hedera. The contract is not audited and mainnet signing is disabled; everything shown settles on testnet. Clone it and ship your checkout.”
 
 ## Edit checklist
 

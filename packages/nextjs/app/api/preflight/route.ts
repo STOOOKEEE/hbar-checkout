@@ -2,7 +2,7 @@ import {
   assertAssociated,
   assertDeployment,
   CheckoutError,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 import { getConfig, errorResponse } from "@/lib/server";
 export const dynamic = "force-dynamic";
 

@@ -13,7 +13,7 @@ import {
   rpcWeiToTinybar,
   type CheckoutConfig,
   type TransactionReceipt,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 
 export type WalletKind = "evm" | "hashpack";
 /** `value` is RPC wei, as returned by paymentTransaction. */
@@ -136,7 +136,7 @@ async function hashPackConnector(): Promise<DAppConnector> {
     ]);
     const instance = new wc.DAppConnector(
       {
-        name: "SaucerPay",
+        name: "HBAR Checkout",
         description: "Invoices paid in HBAR, settled in HTS tokens.",
         url: window.location.origin,
         icons: [`${window.location.origin}/favicon.ico`],

@@ -40,7 +40,7 @@ async function main() {
   try {
     // No submit key: anyone may post. Readers trust only the invoice merchant.
     const response = await new TopicCreateTransaction()
-      .setTopicMemo(`saucerpay:${evidence.checkout}`)
+      .setTopicMemo(`hbar-checkout:${evidence.checkout}`)
       .setAdminKey(key.publicKey)
       .execute(client);
     const receipt = await response.getReceipt(client);

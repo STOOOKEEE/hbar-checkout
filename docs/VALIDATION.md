@@ -4,12 +4,14 @@
 
 This file separates local checks, real protocol reads and actual transactions. Passing the first two does not imply a live payment succeeded. Newest records first; older records keep their original source revisions.
 
+Records dated before 2026-10-02 were recorded under the former name SaucerPay. Their on-chain values (such as the HCS topic memo and label), package names, temporary paths and Vercel URLs are kept exactly as observed.
+
 ## Fresh public scaffold — 2026-10-01
 
-Public source commit [`342fdc7`](https://github.com/STOOOKEEE/hedera-temlate/commit/342fdc71463946854bac43cb34c9eb5dba5192bc) (HCS log, `PayWithHbar`, fulfill endpoint, +25 % gas rule, Node 20.18.3 floor) was generated twice with `create-scaffold-hbar@0.4.1`, each time in a new empty `/tmp` directory with no env files, no keys and no local template override. Only a throwaway Git identity was supplied, through a temporary `GIT_CONFIG_GLOBAL` file:
+Public source commit [`342fdc7`](https://github.com/STOOOKEEE/hbar-checkout/commit/342fdc71463946854bac43cb34c9eb5dba5192bc) (HCS log, `PayWithHbar`, fulfill endpoint, +25 % gas rule, Node 20.18.3 floor) was generated twice with `create-scaffold-hbar@0.4.1`, each time in a new empty `/tmp` directory with no env files, no keys and no local template override. Only a throwaway Git identity was supplied, through a temporary `GIT_CONFIG_GLOBAL` file:
 
 ```bash
-npm create scaffold-hbar@latest -- --template STOOOKEEE/hedera-temlate --destination app \
+npm create scaffold-hbar@latest -- --template STOOOKEEE/hbar-checkout --destination app \
   --frontend nextjs-app --solidity-framework hardhat --network testnet \
   --package-manager npm --skip-hedera-skills --ci
 cd app && npm ci && npm run lint && npm test && npm run build
@@ -84,6 +86,8 @@ Local dev server with the USDC checkout and topic configured. No transaction was
 - Chromium, `/pay/0x08c3…7791?tx=0xbc33…3dd8` rendered by `PayWithHbar`: "Payment received.", "Settled and verified", 0.43988881 HBAR converted, 0.00219945 HBAR returned, and the HCS description "Logo design – SaucerPay demo" with its topic link. **Download verified receipt** produced the expected JSON. A missing invoice showed "Invoice does not exist on this deployment." with Retry. `/examples` rendered both integration snippets. No page errors.
 - `POST /api/orders/:orderId/fulfill` with curl: bad JSON 400 `INVALID_REQUEST`; bad invoice 400 `INVALID_INVOICE`; bad reference 400 `INVALID_RECEIPT`; unknown order 404; another invoice 409 `INVOICE_MISMATCH`; unindexed hash 202 pending; the deployment transaction as reference 400 `INVALID_RECEIPT`; the real payment `0xbc33…3dd8` 200 with `spentTinybar` 43988881; a repeat call returned the same 200 payload.
 - Four `verifyInvoicePayment` unit tests (pending, paid, wrong invoice/amount, malformed reference rejected before any fetch) pass. `scripts/smoke.mjs` now also checks the fulfill endpoint's 400/404 paths; it passed against that server.
+
+![The paid USDC invoice 0x08c3…7791 rendered by PayWithHbar: settled and verified, with the HCS label (screenshot regenerated on a local production server on 2026-10-02 after the rename)](paid-invoice.png)
 
 ## Node 20.18.3 compatibility — 2026-10-01
 
@@ -181,8 +185,6 @@ SaucerSwap V1 testnet router (`0.0.19264`). No mainnet payment is claimed.
 | Separate-payer settlement | [Successful Hedera Mirror Node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) · [HashScan](https://hashscan.io/testnet/transaction/0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) |
 | Hosted receipt            | [Paid invoice with matching transaction](https://saucerpay-hedera.vercel.app/pay/0x8f97d7a7c61394e9f927e2b0d9d7b62fc396d091cfffc0475ab3b13493b58e61?tx=0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1)                                                                         |
 
-![The hosted paid invoice from the earlier SAUCE payment, showing exact SAUCE delivery, HBAR spent and unused HBAR returned](paid-invoice.png)
-
 The merchant was `0x8EE8292BDD3E80Af225c2a91Afcc45ccA800f0fe`; the separately
 funded payer was `0x43937DB58f8530B47E807CA9A166F2a9fF7F3645`. Invoice
 `0x8f97d7a7c61394e9f927e2b0d9d7b62fc396d091cfffc0475ab3b13493b58e61`
@@ -222,9 +224,9 @@ contest entry and developer-experience survey have not been submitted.
 
 ## Fresh public scaffold — 2026-09-22
 
-Public source commit [`57483b85056ad6181c4095a34f711ab5fe0bca96`](https://github.com/STOOOKEEE/hedera-temlate/commit/57483b85056ad6181c4095a34f711ab5fe0bca96)
+Public source commit [`57483b85056ad6181c4095a34f711ab5fe0bca96`](https://github.com/STOOOKEEE/hbar-checkout/commit/57483b85056ad6181c4095a34f711ab5fe0bca96)
 was generated into an empty `/tmp/saucerpay-fresh-live-57483b8` directory
-using `create-scaffold-hbar@0.4.0`, `--template STOOOKEEE/hedera-temlate`,
+using `create-scaffold-hbar@0.4.0`, `--template STOOOKEEE/hbar-checkout`,
 Next.js, Hardhat, npm, testnet and `--skip-hedera-skills`. The CLI installed
 dependencies and initialized Git. No local template override or wallet key
 was supplied; `template.json` was consumed as expected and the root
@@ -234,11 +236,11 @@ The generated project passed lint, both TypeScript checks, **20 shared tests**,
 **11 contract tests**, Solidity compilation and the production Next.js build.
 It booted on port 3032 and passed the route smoke. The documented CLI example
 returned a real read-only quote for 1 testnet SAUCE. [GitHub Actions passed on
-that source commit](https://github.com/STOOOKEEE/hedera-temlate/actions/runs/35776567692).
+that source commit](https://github.com/STOOOKEEE/hbar-checkout/actions/runs/35776567692).
 
 ## Bounty optimization before the live deployment — 2026-09-22
 
-- Public source `56e15734da4247f717f16869bc2f787c09410289` was freshly generated with the published Scaffold-HBAR CLI, installed, linted, tested, built and booted on port 3024. Its route smoke passed. [Source CI also passed](https://github.com/STOOOKEEE/hedera-temlate/actions/runs/35717199298).
+- Public source `56e15734da4247f717f16869bc2f787c09410289` was freshly generated with the published Scaffold-HBAR CLI, installed, linted, tested, built and booted on port 3024. Its route smoke passed. [Source CI also passed](https://github.com/STOOOKEEE/hbar-checkout/actions/runs/35717199298).
 - The optimized frontend was deployed through the authenticated owner account as Vercel production deployment `dpl_3XCr7P9SUjrsYW1meFPWFG1EdXsr`. The permanent project domain is [saucerpay-hedera.vercel.app](https://saucerpay-hedera.vercel.app); the original project domain remains available.
 - The new domain was explicitly added to the project's production domains. Public HTTP checks confirm direct responses without Vercel authentication redirects. Browser checks on this public origin passed, including real quotes and mobile examples.
 - Lint/types, 19 shared-package tests and 11 contract tests pass (30 total).
@@ -255,7 +257,7 @@ that source commit](https://github.com/STOOOKEEE/hedera-temlate/actions/runs/357
 
 The revised developer guides were exercised against public source commit
 `19ea7307316c779e044fed6ddaed0ef08b1c4c2f` in a new directory generated by
-`npx create-scaffold-hbar@latest`, using `--template STOOOKEEE/hedera-temlate`.
+`npx create-scaffold-hbar@latest`, using `--template STOOOKEEE/hbar-checkout`.
 The non-interactive check supplied a destination, supported defaults and a
 temporary Git author identity, and skipped optional Hedera skill installation.
 No local template override or pre-existing node_modules was used.
@@ -271,7 +273,7 @@ No local template override or pre-existing node_modules was used.
 | Documented invalid-network call                       | HTTP 400 with `INVALID_NETWORK`                                              |
 | Both complete TypeScript snippets in CUSTOMIZATION.md | Extracted and typechecked successfully; signing snippet was not executed     |
 | Relative Markdown links and anchors                   | Checked against files/headings                                               |
-| Source CI for this revision                           | [Pass](https://github.com/STOOOKEEE/hedera-temlate/actions/runs/35715530610) |
+| Source CI for this revision                           | [Pass](https://github.com/STOOOKEEE/hbar-checkout/actions/runs/35715530610) |
 
 The following historical records retain their original source revisions. This
 documentation walkthrough did not deploy a contract or submit a payment.
@@ -287,16 +289,16 @@ Validated on Node.js 22.23.2 and npm 10.9.8 at that revision:
 | Solidity payment invariant tests                            | 11 passing                                                                                                                             |
 | Production Solidity + Next.js build                         | Pass                                                                                                                                   |
 | Production route smoke                                      | Pass: `/`, `/guide`, `/pay/<id>`, invalid-network API error                                                                            |
-| GitHub Actions source CI                                    | [Pass](https://github.com/STOOOKEEE/hedera-temlate/actions/runs/35672872909)                                                           |
+| GitHub Actions source CI                                    | [Pass](https://github.com/STOOOKEEE/hbar-checkout/actions/runs/35672872909)                                                           |
 | Actual public external-template generation                  | Pass with `create-scaffold-hbar@0.4.0`                                                                                                 |
 | Fresh generated app install/lint/19 tests/build/start/smoke | Pass                                                                                                                                   |
 | Browser checks (Chromium)                                   | Pass: live testnet and mainnet quotes, disabled creation before deployment, guide navigation, undeployed-invoice error, no page errors |
 | Responsive check                                            | 1440px desktop and 390px mobile; no horizontal mobile overflow                                                                         |
 | Missing deployment key                                      | Clear failure before any transaction is submitted                                                                                      |
 
-The external-template validation downloaded `STOOOKEEE/hedera-temlate` from GitHub at implementation commit `51f9e4b`, installed dependencies through the published CLI and ran checks in `/tmp/saucerpay-fresh`. No local-template override was used. The CLI consumes `template.json`; that is expected behavior. Git author identity was supplied only for the isolated validation process.
+The external-template validation downloaded `STOOOKEEE/hbar-checkout` from GitHub at implementation commit `51f9e4b`, installed dependencies through the published CLI and ran checks in `/tmp/saucerpay-fresh`. No local-template override was used. The CLI consumes `template.json`; that is expected behavior. Git author identity was supplied only for the isolated validation process.
 
-The upstream CLI rewrites some npm prose during generation. The README and app guide use the equivalent `npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate` entry point so their install commands remain valid in generated projects. The standard npm-create entry point was the one exercised during validation.
+The upstream CLI rewrites some npm prose during generation. The README and app guide use the equivalent `npx create-scaffold-hbar@latest --template STOOOKEEE/hbar-checkout` entry point so their install commands remain valid in generated projects. The standard npm-create entry point was the one exercised during validation.
 
 Contract tests cover exact delivery, surplus refund, duplicate settlement, duplicate merchant references, merchant namespaces, cancellation authorization, expiry, maximum spend, under-delivery, withheld refunds, refund rejection and reentrancy. These use mock tokens/router and do not emulate HTS precompiles.
 

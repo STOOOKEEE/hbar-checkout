@@ -2,7 +2,7 @@ import {
   CheckoutError,
   networkConfig,
   type Network,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 
 export function getConfig(requested?: string | null) {
   const selected = process.env.HEDERA_NETWORK || "testnet";

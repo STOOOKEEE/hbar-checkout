@@ -1,4 +1,4 @@
-import { quotePayment } from "@saucerpay/checkout";
+import { quotePayment } from "@hbar-checkout/checkout";
 import { getConfig, errorResponse } from "@/lib/server";
 export const dynamic = "force-dynamic";
 

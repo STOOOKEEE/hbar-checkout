@@ -4,7 +4,7 @@ import {
   verifyInvoicePayment,
   CheckoutError,
   type PaymentReceipt,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 import { getConfig, errorResponse } from "@/lib/server";
 export const dynamic = "force-dynamic";
 

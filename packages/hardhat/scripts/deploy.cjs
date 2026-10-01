@@ -59,7 +59,7 @@ async function main() {
     `Observed quote for 1 token: ${ethers.formatUnits(sample[0], 8)} HBAR (read-only).`,
   );
   const checkout = await (
-    await ethers.getContractFactory("SaucerPay")
+    await ethers.getContractFactory("HbarCheckout")
   ).deploy(router, whbar, token);
   await checkout.waitForDeployment();
   const receipt = await checkout.deploymentTransaction().wait();

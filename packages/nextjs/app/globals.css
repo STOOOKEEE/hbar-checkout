@@ -72,6 +72,7 @@ button:not(:disabled):active {
   font-weight: 800;
   font-size: 26px;
   letter-spacing: -1.1px;
+  white-space: nowrap;
   display: flex;
   align-items: center;
 }
@@ -939,7 +940,7 @@ code {
     gap: 15px;
   }
   .brand {
-    font-size: 22px;
+    font-size: 18px;
   }
   .brand-mark {
     width: 29px;

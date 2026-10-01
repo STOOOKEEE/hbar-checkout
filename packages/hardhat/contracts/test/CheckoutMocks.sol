@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import '../SaucerPay.sol';
+import '../HbarCheckout.sol';
 
 contract MockToken {
     mapping(address => uint256) public balanceOf;
@@ -40,7 +40,7 @@ contract MockRouter {
 }
 
 contract RejectingPayer {
-    function pay(SaucerPay checkout, bytes32 id, uint256 deadline) external payable {
+    function pay(HbarCheckout checkout, bytes32 id, uint256 deadline) external payable {
         checkout.payInvoice{value: msg.value}(id, deadline);
     }
     receive() external payable { revert('no refunds'); }

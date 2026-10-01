@@ -72,7 +72,7 @@ It writes actual transaction metadata to `deployments/testnet.json` (ignored by 
 npm run hardhat:topic
 ```
 
-This creates a public HCS topic (memo `saucerpay:<checkout>`, admin key = deployer, **no submit key**) for the checkout in `deployments/testnet.json`, saves `topicId` there and prints `HEDERA_TOPIC_ID=0.0.…`. It costs a small HCS fee and is idempotent: a second run prints the saved ID. Without a topic, everything works except invoice labels and **Load my invoices**. Anyone may post to the topic; readers trust only messages paid by the invoice's on-chain merchant ([design](ARCHITECTURE.md#hcs-invoice-log)).
+This creates a public HCS topic (memo `hbar-checkout:<checkout>`, admin key = deployer, **no submit key**) for the checkout in `deployments/testnet.json`, saves `topicId` there and prints `HEDERA_TOPIC_ID=0.0.…`. It costs a small HCS fee and is idempotent: a second run prints the saved ID. Without a topic, everything works except invoice labels and **Load my invoices**. Anyone may post to the topic; readers trust only messages paid by the invoice's on-chain merchant ([design](ARCHITECTURE.md#hcs-invoice-log)).
 
 ## 4. Connect the app
 

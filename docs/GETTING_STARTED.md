@@ -23,7 +23,7 @@ You also need internet access for npm packages, Hedera's public RPC and mirror n
 From the parent folder in which you want the new project:
 
 ```bash
-npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate
+npx create-scaffold-hbar@latest --template STOOOKEEE/hbar-checkout
 ```
 
 Choose a new folder name, such as `my-checkout`, and keep the supported defaults: Next.js, Hardhat, npm. The generator installs dependencies and initializes Git. Wait for it to finish successfully, then:

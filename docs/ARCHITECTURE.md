@@ -15,7 +15,7 @@ flowchart LR
       API["/api/quote · /api/invoices · /api/orders/:id/fulfill"]
     end
     W --> HP & MM
-    HP & MM -->|"createInvoice / payInvoice"| C["SaucerPay contract (HSCS)"]
+    HP & MM -->|"createInvoice / payInvoice"| C["HbarCheckout contract (HSCS)"]
     HP -->|"TopicMessageSubmit"| T["HCS topic"]
     C -->|"swapETHForExactTokens"| S["SaucerSwap V1 router"]
     S -->|"exact USDC"| U["HTS token to merchant"]
@@ -31,7 +31,7 @@ flowchart LR
 | Browser + wallet        | Show terms and obtain user signatures (HashPack or EVM wallet)                    | A browser success message or `onPaid` callback is not payment evidence     |
 | Next.js API             | Read configured contracts, mirror metadata, receipts and HCS labels               | A preflight cannot guarantee future liquidity or permission state          |
 | Shared checkout package | Validate amounts/config, quote, build payment, verify receipt, parse HCS messages | Does not authenticate your application's customer or fulfill an order     |
-| SaucerPay contract      | Store immutable invoice terms and enforce settlement checks                       | Does not ship goods, grant credits or reverse completed payments           |
+| HbarCheckout contract   | Store immutable invoice terms and enforce settlement checks                       | Does not ship goods, grant credits or reverse completed payments           |
 | HTS settlement token    | Hold the merchant's balance; association, freeze and KYC policy                   | A token symbol alone proves nothing; the token ID must match the contract  |
 | SaucerSwap V1           | Execute exact-output conversion using existing liquidity                          | Does not know your application's order or fulfillment state               |
 | HCS invoice log         | Ordered, timestamped merchant descriptions; rebuildable invoice history           | Not authoritative for amount, merchant or status; anyone can post to it    |
@@ -55,7 +55,7 @@ Both wallet paths send `bufferedGasLimit(eth_estimateGas)`, i.e. the estimate +2
 ```mermaid
 sequenceDiagram
     participant M as Merchant wallet
-    participant C as SaucerPay contract
+    participant C as HbarCheckout contract
     participant P as Payer wallet
     participant A as Quote API
     participant S as SaucerSwap V1

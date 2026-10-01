@@ -6,7 +6,7 @@
 
 ## Short description
 
-SaucerPay is a Scaffold-HBAR template for Hedera apps that price in USDC while their users hold HBAR in HashPack. A drop-in `PayWithHbar` component pays an on-chain invoice in one transaction that swaps HBAR through SaucerSwap, delivers the exact USDC amount to the merchant and refunds unused HBAR; `verifyInvoicePayment` lets the server fulfill only after verifying the receipt. It uses Hedera smart contracts, HTS, an HCS invoice log with merchant-only labels, the mirror node and native HashPack transactions.
+HBAR Checkout is a Scaffold-HBAR template for Hedera apps that price in USDC while their users hold HBAR in HashPack. A drop-in `PayWithHbar` component pays an on-chain invoice in one transaction that swaps HBAR through SaucerSwap, delivers the exact USDC amount to the merchant and refunds unused HBAR; `verifyInvoicePayment` lets the server fulfill only after verifying the receipt. It uses Hedera smart contracts, HTS, an HCS invoice log with merchant-only labels, the mirror node and native HashPack transactions.
 
 ## Why the integration matters
 
@@ -16,13 +16,13 @@ The reference checkout settles in testnet USDC (`0.0.5449`). The mainnet USDC pr
 
 ## Links to provide
 
-- Source: https://github.com/STOOOKEEE/hedera-temlate
-- Hosted demo: https://saucerpay-hedera.vercel.app
+- Source: https://github.com/STOOOKEEE/hbar-checkout
+- Hosted demo: https://hbar-checkout.vercel.app
 - Developer docs: [README navigation](../README.md#find-the-right-guide)
 - Architecture: [payment flow and units](ARCHITECTURE.md)
 - Contract deployment: [Hedera Mirror Node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xf7cd48ffb48e9385be5f1be7aa064921754398ab7f1a6f670c251da907d29ed1) · [HashScan](https://hashscan.io/testnet/transaction/0xf7cd48ffb48e9385be5f1be7aa064921754398ab7f1a6f670c251da907d29ed1)
 - Two-wallet testnet USDC payment: [Hedera Mirror Node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) · [HashScan](https://hashscan.io/testnet/transaction/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8)
-- Paid invoice on the hosted app: [USDC invoice with its verified payment](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8), viewable without a wallet. The [earlier SAUCE paid invoice](VALIDATION.md#earlier-sauce-testnet-deployment-and-payment--2026-09-22) remains historical evidence.
+- Paid invoice on the hosted app: [USDC invoice with its verified payment](https://hbar-checkout.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8), viewable without a wallet. The [earlier SAUCE paid invoice](VALIDATION.md#earlier-sauce-testnet-deployment-and-payment--2026-09-22) remains historical evidence.
 - HCS invoice log: [topic `0.0.10814952`](https://hashscan.io/testnet/topic/0.0.10814952) with a payer's fake label ignored and the merchant's label accepted ([record](VALIDATION.md#hcs-invoice-log--2026-10-01)).
 - Browser-exported receipt: on the earlier SAUCE deployment, the hosted page's **Download verified receipt** JSON passed `npm run submission:check -- /path/to/downloaded.json`. For USDC, the download was checked on a local server, not re-run through `submission:check`.
 - Demo recording: **not recorded yet; follow the [complete video script and shot list](VIDEO_SCRIPT.md)**
@@ -50,7 +50,7 @@ npm run submission:check
 The commands above need the funded testnet ECDSA configuration. The payment smoke writes an actual receipt record to the ignored `deployments/payment-evidence.json`. Alternatively, download a verified receipt from the payment page, then run:
 
 ```bash
-npm run submission:check -- /path/to/saucerpay-receipt.json
+npm run submission:check -- /path/to/hbar-checkout-receipt.json
 ```
 
 The preflight checks source metadata, tracked env-file names, configured contract immutables, invoice state, the successful matching payment event, the recorded amount and mirror-node success. Missing or unverifiable evidence results in a nonzero exit code. It does not replace a full secret scan, fresh-build tests, an audit or the organizer's eligibility validator.

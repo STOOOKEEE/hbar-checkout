@@ -17,7 +17,7 @@ jobs:
       - run: npm run build
       - name: Boot the production app
         run: |
-          npm start > /tmp/saucerpay-next.log 2>&1 &
+          npm start > /tmp/hbar-checkout-next.log 2>&1 &
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://localhost:3000 > /dev/null; then break; fi
             sleep 1

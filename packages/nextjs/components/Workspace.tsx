@@ -14,7 +14,7 @@ import {
   type CheckoutConfig,
   type Invoice,
   type TokenInfo,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 import {
   api,
   confirm,

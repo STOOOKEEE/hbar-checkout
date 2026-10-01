@@ -418,7 +418,7 @@ export async function assertDeployment(
   if (!config.checkout)
     throw new CheckoutError(
       "DEPLOYMENT_REQUIRED",
-      "Deploy SaucerPay on testnet and configure HEDERA_CHECKOUT_ADDRESS first.",
+      "Deploy the HbarCheckout contract on testnet and configure HEDERA_CHECKOUT_ADDRESS first.",
     );
   const expected = {
     router: config.router,

@@ -1,4 +1,4 @@
-# Working on SaucerPay with a coding agent
+# Working on HBAR Checkout with a coding agent
 
 This repository is a reusable Scaffold-HBAR payment template. The invoice workspace is an example consumer; preserve the shared integration when adapting the UI.
 
@@ -24,7 +24,7 @@ Use Node.js 20.18.3+ and npm workspaces. Install with `npm ci` at the repository
 | Change amounts, quote or receipt logic | `packages/checkout/src/index.ts`                              |
 | Change HCS label format or trust rule  | `packages/checkout/src/hcs.ts`                                |
 | Change the example fulfillment gate    | `packages/nextjs/app/api/orders/[orderId]/fulfill/route.ts`   |
-| Change invoice settlement              | `packages/hardhat/contracts/SaucerPay.sol`                    |
+| Change invoice settlement              | `packages/hardhat/contracts/HbarCheckout.sol`                 |
 | Run the documented no-key example      | `npx tsx packages/checkout/examples/quote.ts`                 |
 | Validate source                        | `npm run lint`, `npm test`, `npm run build`                   |
 | Validate served routes                 | `PORT=3020 npm start`, then `SMOKE_ORIGIN=http://localhost:3020 npm run smoke` (not `npm start -- -p`) |

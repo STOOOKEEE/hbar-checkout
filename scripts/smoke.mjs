@@ -12,7 +12,7 @@ for (const route of ["/", "/guide", "/examples", "/pay/0x" + "ab".repeat(32)]) {
     200,
     `${route} should boot without credentials`,
   );
-  assert.match(await response.text(), /<title>SaucerPay/);
+  assert.match(await response.text(), /<title>HBAR Checkout/);
   console.log(`OK ${route}`);
 }
 const invalid = await fetch(origin + "/api/quote?network=invalid");

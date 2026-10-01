@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  transpilePackages: ["@saucerpay/checkout"],
+  transpilePackages: ["@hbar-checkout/checkout"],
   poweredByHeader: false,
   agentRules: false,
 };

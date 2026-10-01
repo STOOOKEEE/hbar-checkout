@@ -36,7 +36,7 @@ const clientSnippet = `import { PayWithHbar } from "@/components/PayWithHbar";
     })
   }
 />`;
-const serverSnippet = `import { verifyInvoicePayment } from "@saucerpay/checkout";
+const serverSnippet = `import { verifyInvoicePayment } from "@hbar-checkout/checkout";
 import { getConfig } from "@/lib/server";
 
 const result = await verifyInvoicePayment(getConfig(), {
@@ -50,7 +50,7 @@ export default function Examples() {
   const example = examples[selected];
   return (
     <div className="workspace examples-page">
-      <p className="eyebrow">Build with SaucerPay</p>
+      <p className="eyebrow">Build with HBAR Checkout</p>
       <h1>
         Start with a<br />
         <span>real payment need.</span>
@@ -96,7 +96,7 @@ export default function Examples() {
           </div>
           <a
             className="button secondary"
-            href="https://github.com/STOOOKEEE/hedera-temlate/blob/main/docs/CUSTOMIZATION.md"
+            href="https://github.com/STOOOKEEE/hbar-checkout/blob/main/docs/CUSTOMIZATION.md"
           >
             Read the integration recipe ↗
           </a>

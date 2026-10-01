@@ -1,12 +1,12 @@
-# SaucerPay
+# HBAR Checkout
 
 **Price in USDC. Let customers pay with the HBAR already in their HashPack wallet.**
 
-SaucerPay is a [Scaffold-HBAR](https://docs.hedera.com/solutions/tools/scaffold-hbar/index) template for checkout on Hedera. A merchant creates an on-chain invoice for an exact amount of an HTS token (testnet USDC by default). The payer signs **one** transaction: the SaucerPay contract swaps their HBAR through SaucerSwap, checks that the merchant received exactly the invoiced tokens and refunds unused HBAR, or the whole transaction reverts. Your server then verifies the receipt before fulfilling the order. You reuse a React component, a server helper and the contract; the invoice workspace only demonstrates them.
+HBAR Checkout is a [Scaffold-HBAR](https://docs.hedera.com/solutions/tools/scaffold-hbar/index) template for checkout on Hedera. A merchant creates an on-chain invoice for an exact amount of an HTS token (testnet USDC by default). The payer signs **one** transaction: the HBAR Checkout contract swaps their HBAR through SaucerSwap, checks that the merchant received exactly the invoiced tokens and refunds unused HBAR, or the whole transaction reverts. Your server then verifies the receipt before fulfilling the order. You reuse a React component, a server helper and the contract; the invoice workspace only demonstrates them.
 
-**[Live demo](https://saucerpay-hedera.vercel.app)** · **[Paid invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8)** · **[Start locally](docs/GETTING_STARTED.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Evidence](docs/VALIDATION.md)**
+**[Live demo](https://hbar-checkout.vercel.app)** · **[Paid invoice](https://hbar-checkout.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8)** · **[Start locally](docs/GETTING_STARTED.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Evidence](docs/VALIDATION.md)**
 
-![SaucerPay workspace showing a live SaucerSwap quote and the testnet setup state](docs/workspace.png)
+![HBAR Checkout workspace showing the invoice form for testnet USDC and a live SaucerSwap quote](docs/workspace.png)
 
 ## Who it is for
 
@@ -39,7 +39,7 @@ import { PayWithHbar } from "@/components/PayWithHbar";
 Fulfill only after your server has verified the payment on-chain:
 
 ```ts
-import { verifyInvoicePayment } from "@saucerpay/checkout";
+import { verifyInvoicePayment } from "@hbar-checkout/checkout";
 import { getConfig } from "@/lib/server";
 
 const result = await verifyInvoicePayment(getConfig(), {
@@ -55,7 +55,7 @@ if (result.status === "paid") await fulfillOnce(order.id, result.payment);
 
 | Real, verified on Hedera testnet ([evidence](docs/VALIDATION.md))                                                                                    | Placeholder or not yet tested                                                                                    |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| SaucerPay contract `0x140e…055E` settling testnet USDC `0.0.5449` through the SaucerSwap V1 router                                                   | `exampleOrders` / `exampleFulfillments` in the fulfill endpoint are in-memory maps standing in for your database |
+| HBAR Checkout contract `0x140e…055E` settling testnet USDC `0.0.5449` through the SaucerSwap V1 router                                                   | `exampleOrders` / `exampleFulfillments` in the fulfill endpoint are in-memory maps standing in for your database |
 | Two-wallet payment: exactly 1 USDC delivered, unused HBAR refunded, receipt re-verified by `npm run submission:check`                                | The fulfill endpoint verifies payment but delivers nothing; delivery and credit ledgers are yours                 |
 | Native Hedera path (`ContractExecuteTransaction`, `TokenAssociateTransaction`) run by script with the same code HashPack uses                         | A real HashPack session and signature: not tested; it needs `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`               |
 | HCS invoice log `0.0.10814952`: a payer's fake label ignored, the merchant's label accepted                                                          | MetaMask signing through the UI: not exercised live                                                              |
@@ -63,9 +63,9 @@ if (result.status === "paid") await fulfillOnce(order.id, result.payment);
 
 ## Hedera services used
 
-| Service                             | Role in SaucerPay                                                                                                      |
+| Service                             | Role in HBAR Checkout                                                                                                    |
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Smart contracts (HSCS)              | [`SaucerPay.sol`](packages/hardhat/contracts/SaucerPay.sol) stores invoice terms and settles atomically                |
+| Smart contracts (HSCS)              | [`HbarCheckout.sol`](packages/hardhat/contracts/HbarCheckout.sol) stores invoice terms and settles atomically                |
 | Token Service (HTS)                 | Settlement asset; merchant token association, freeze/KYC and custom-fee checks before payment                          |
 | Consensus Service (HCS)             | Optional public invoice log: merchant-signed labels and a rebuildable invoice history                                 |
 | Mirror node                         | Token metadata, association state, receipts by Hedera transaction ID, HCS messages                                     |
@@ -77,14 +77,14 @@ if (result.status === "paid") await fulfillOnce(order.id, result.payment);
 Prerequisites: **Node.js 20.18.3 or newer**, npm, Git with your author identity configured, and internet access. No Hedera account is needed to see live quotes.
 
 ```bash
-npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate
+npx create-scaffold-hbar@latest --template STOOOKEEE/hbar-checkout
 cd your-project
 npm run dev
 ```
 
 Choose Next.js, Hardhat and npm. Open http://localhost:3000, choose **USDC · Testnet** in the quote panel, enter `1` and click **Get live quote**. A failed network call shows an error, never a sample price. **Create payment link** stays disabled until you [deploy your checkout](docs/DEPLOYMENT.md); that is expected.
 
-Direct clone instead: `git clone https://github.com/STOOOKEEE/hedera-temlate.git && cd hedera-temlate && npm ci && npm run dev`.
+Direct clone instead: `git clone https://github.com/STOOOKEEE/hbar-checkout.git && cd hbar-checkout && npm ci && npm run dev`.
 
 ## How a payment works
 
@@ -122,7 +122,7 @@ A quote is a read, not a payment. If any settlement check fails, the payment rev
 | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | [`packages/checkout/src/index.ts`](packages/checkout/src/index.ts)                                          | Quotes, amounts, deployment/association checks, transactions, receipt verification |
 | [`packages/checkout/src/hcs.ts`](packages/checkout/src/hcs.ts)                                              | HCS invoice log: message format and the merchant-only label rule                  |
-| [`packages/hardhat/contracts/SaucerPay.sol`](packages/hardhat/contracts/SaucerPay.sol)                      | Invoice terms, cancellation and atomic settlement                                 |
+| [`packages/hardhat/contracts/HbarCheckout.sol`](packages/hardhat/contracts/HbarCheckout.sol)                      | Invoice terms, cancellation and atomic settlement                                 |
 | [`packages/nextjs/components/PayWithHbar.tsx`](packages/nextjs/components/PayWithHbar.tsx)                  | Drop-in payer flow: quote, wallet, pay, `?tx=` recovery, verified receipt         |
 | [`packages/nextjs/components/Workspace.tsx`](packages/nextjs/components/Workspace.tsx)                      | Example merchant workspace (create, label, list invoices)                         |
 | [`packages/nextjs/lib/wallet.ts`](packages/nextjs/lib/wallet.ts)                                            | HashPack (native) and MetaMask (EVM) adapters                                     |

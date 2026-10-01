@@ -106,4 +106,4 @@ Contract errors `IncorrectDelivery`, `InvalidRouterResult` and `RefundFailed` ro
 
 Include commit SHA (`git rev-parse HEAD`), Node/npm versions, reproduction steps, network, public token/contract IDs, error code, HTTP status and any public transaction hash. Say whether the failure happened before or after wallet submission. Exclude `.env` files, keys, seed phrases and private Vercel claim links.
 
-[Open a repository issue](https://github.com/STOOOKEEE/hedera-temlate/issues).
+[Open a repository issue](https://github.com/STOOOKEEE/hbar-checkout/issues).

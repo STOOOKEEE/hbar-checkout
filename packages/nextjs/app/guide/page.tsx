@@ -19,7 +19,7 @@ export default function Guide() {
           The workspace reads SaucerSwap prices without a wallet or API key. An
           unavailable pool produces an explicit error.
         </p>
-        <pre>{`npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate\ncd your-project\nnpm run dev`}</pre>
+        <pre>{`npx create-scaffold-hbar@latest --template STOOOKEEE/hbar-checkout\ncd your-project\nnpm run dev`}</pre>
         <p>
           Use Node.js 20.18.3 or later. Select Next.js, Hardhat and npm if
           prompted.
@@ -57,7 +57,7 @@ export default function Guide() {
         </ol>
         <p>
           See{" "}
-          <a href="https://github.com/STOOOKEEE/hedera-temlate/blob/main/docs/DEPLOYMENT.md">
+          <a href="https://github.com/STOOOKEEE/hbar-checkout/blob/main/docs/DEPLOYMENT.md">
             the deployment walkthrough
           </a>{" "}
           for exact steps, account requirements and transaction evidence.
@@ -87,15 +87,15 @@ export default function Guide() {
           handles invoice payment.
         </p>
         <p>
-          <a href="https://github.com/STOOOKEEE/hedera-temlate/blob/main/docs/CUSTOMIZATION.md">
+          <a href="https://github.com/STOOOKEEE/hbar-checkout/blob/main/docs/CUSTOMIZATION.md">
             Customization recipe
           </a>{" "}
           ·{" "}
-          <a href="https://github.com/STOOOKEEE/hedera-temlate/blob/main/docs/REFERENCE.md">
+          <a href="https://github.com/STOOOKEEE/hbar-checkout/blob/main/docs/REFERENCE.md">
             API reference
           </a>{" "}
           ·{" "}
-          <a href="https://github.com/STOOOKEEE/hedera-temlate/blob/main/docs/TROUBLESHOOTING.md">
+          <a href="https://github.com/STOOOKEEE/hbar-checkout/blob/main/docs/TROUBLESHOOTING.md">
             Troubleshooting
           </a>
         </p>

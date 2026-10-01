@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 // Package only tracked frontend/shared source. Never upload Hardhat keys,
 // local env files, deployment receipts, or node_modules to the demo host.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const destination = await mkdtemp(path.join(tmpdir(), "saucerpay-vercel-"));
+const destination = await mkdtemp(path.join(tmpdir(), "hbar-checkout-vercel-"));
 const files = execFileSync(
   "git",
   ["ls-files", "-z", "packages/nextjs", "packages/checkout"],
@@ -36,7 +36,7 @@ const manifest = JSON.parse(
 const workspace = JSON.parse(
   await readFile(path.join(root, "package.json"), "utf8"),
 );
-manifest.name = "saucerpay-demo";
+manifest.name = "hbar-checkout-demo";
 manifest.engines = { node: "22.x" };
 manifest.workspaces = ["packages/checkout"];
 manifest.devDependencies.typescript = workspace.devDependencies.typescript;

@@ -1,4 +1,4 @@
-# Host SaucerPay on Vercel
+# Host HBAR Checkout on Vercel
 
 [README](../README.md) · [Server configuration](REFERENCE.md#configuration) · [Testnet deployment](DEPLOYMENT.md)
 
@@ -39,7 +39,7 @@ Never upload `HEDERA_PRIVATE_KEY` or the Hardhat `.env` to Vercel.
 The current public site serves Hedera testnet, USDC `0.0.5449` and the
 [USDC reference checkout](VALIDATION.md#hosted-app-on-the-usdc-checkout--2026-10-01)
 `0x140e27Cf63790a558d66C8796A67984d5164055E`; its
-[paid invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8)
+[paid invoice](https://hbar-checkout.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8)
 can be inspected without a wallet. `HEDERA_TOPIC_ID=0.0.10814952` is set in the
 project. `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is not, so HashPack is unavailable
 on the hosted app. The deployer and payer keys were not uploaded to Vercel.

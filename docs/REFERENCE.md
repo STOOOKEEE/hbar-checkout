@@ -116,7 +116,7 @@ Expect HTTP 400 and `INVALID_NETWORK`. `PENDING_RECEIPT` means retry the **read*
 
 ## Shared TypeScript package
 
-`@saucerpay/checkout` is a local npm workspace, not a separately published npm package. Next.js transpiles its TypeScript source using `transpilePackages`. For another framework, enable equivalent TypeScript/workspace support.
+`@hbar-checkout/checkout` is a local npm workspace, not a separately published npm package. Next.js transpiles its TypeScript source using `transpilePackages`. For another framework, enable equivalent TypeScript/workspace support.
 
 | Export                                                       | Purpose                                                                                        |
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
@@ -159,7 +159,7 @@ It also exports `VerifiedPayment` (`PaymentReceipt & { reference }`) and `Invoic
 
 ## Contract interface
 
-Source: [SaucerPay.sol](../packages/hardhat/contracts/SaucerPay.sol). Constructor: `(routerAddress, whbarAddress, tokenAddress)`. All three are immutable; changing the settlement asset requires a new deployment.
+Source: [HbarCheckout.sol](../packages/hardhat/contracts/HbarCheckout.sol). Constructor: `(routerAddress, whbarAddress, tokenAddress)`. All three are immutable; changing the settlement asset requires a new deployment.
 
 | Method                                                               | Caller and effect                                                                                   |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |

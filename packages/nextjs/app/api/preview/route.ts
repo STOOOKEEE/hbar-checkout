@@ -2,7 +2,7 @@ import {
   CheckoutError,
   previewConfig,
   quotePayment,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 import { errorResponse } from "@/lib/server";
 
 export const dynamic = "force-dynamic";

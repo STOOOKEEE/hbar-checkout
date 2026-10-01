@@ -13,7 +13,7 @@ import {
   type TokenInfo,
   type Quote,
   type PaymentReceipt,
-} from "@saucerpay/checkout";
+} from "@hbar-checkout/checkout";
 import {
   api,
   confirm,
@@ -47,7 +47,7 @@ type PayWithHbarProps = {
 };
 
 /** sessionStorage prefix: which invoice a `?tx=` written in this tab pays. */
-const TX_INVOICE = "saucerpay:tx:";
+const TX_INVOICE = "hbar-checkout:tx:";
 
 /**
  * Pays an on-chain invoice in HBAR. The reference is kept in `?tx=` so a
@@ -195,7 +195,7 @@ function InvoicePayment({
     );
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `saucerpay-${data.invoice.id.slice(0, 10)}.json`;
+    anchor.download = `hbar-checkout-${data.invoice.id.slice(0, 10)}.json`;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }

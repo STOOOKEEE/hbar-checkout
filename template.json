@@ -1,5 +1,5 @@
 {
-  "name": "saucerpay",
+  "name": "hbar-checkout",
   "description": "Exact-amount HTS checkout paid in HBAR through SaucerSwap, with atomic invoice settlement.",
   "version": "0.1.0",
   "create-scaffold-hbar": {
@@ -19,7 +19,7 @@
     "outro": {
       "sections": [
         {
-          "title": "Run SaucerPay",
+          "title": "Run HBAR Checkout",
           "steps": [
             {
               "command": "{run:dev}"

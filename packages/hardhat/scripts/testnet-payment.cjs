@@ -21,7 +21,7 @@ async function main() {
   if (deployment.chainId !== 296)
     throw new Error("Expected testnet deployment evidence.");
   const checkout = await ethers.getContractAt(
-    "SaucerPay",
+    "HbarCheckout",
     deployment.checkout,
     signer,
   );
