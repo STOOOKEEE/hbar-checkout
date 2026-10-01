@@ -83,7 +83,7 @@ export function networkConfig(
       "Invalid checkout contract address.",
     );
   const main = network === "mainnet";
-  const selectedToken = tokenId || (main ? "0.0.731861" : "0.0.1183558");
+  const selectedToken = tokenId || (main ? "0.0.456858" : "0.0.5449");
   return {
     network,
     chainId: main ? 295 : 296,
@@ -98,6 +98,7 @@ export function networkConfig(
 }
 
 export const PREVIEW_PRESETS = {
+  "testnet-usdc": { network: "testnet", tokenId: "0.0.5449", symbol: "USDC" },
   "mainnet-usdc": { network: "mainnet", tokenId: "0.0.456858", symbol: "USDC" },
   "testnet-sauce": {
     network: "testnet",
@@ -180,6 +181,15 @@ export function tinybarToRpcWei(tinybar: bigint): bigint {
     throw new CheckoutError("INVALID_AMOUNT", "Invalid tinybar value.");
   return tinybar * TINYBAR_TO_RPC_WEI;
 }
+/** Inverse of tinybarToRpcWei, for native Hedera transactions that take tinybar. */
+export function rpcWeiToTinybar(wei: bigint): bigint {
+  if (wei < 0n || wei % TINYBAR_TO_RPC_WEI !== 0n)
+    throw new CheckoutError(
+      "INVALID_AMOUNT",
+      "RPC value is not a whole number of tinybar.",
+    );
+  return wei / TINYBAR_TO_RPC_WEI;
+}
 export const hbarDisplay = (tinybar: bigint) => formatUnits(tinybar, 8);
 
 export function validateInvoiceId(id: string): string {
@@ -197,7 +207,11 @@ export function invoiceId(merchant: string, reference: string): string {
   );
 }
 
-async function requestJson(url: string, init?: RequestInit): Promise<unknown> {
+async function requestJson(
+  url: string,
+  init?: RequestInit,
+  nullOnNotFound = false,
+): Promise<unknown> {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -211,6 +225,7 @@ async function requestJson(url: string, init?: RequestInit): Promise<unknown> {
       "The Hedera endpoint is unavailable. Try again shortly.",
     );
   }
+  if (nullOnNotFound && response.status === 404) return null;
   if (!response.ok)
     throw new CheckoutError(
       "NETWORK_UNAVAILABLE",
@@ -242,6 +257,44 @@ export async function rpc(
       "The contract call failed. Check deployment, pool liquidity and token association.",
     );
   return data.result;
+}
+
+export type TransactionReceipt = {
+  transactionHash: string;
+  status: number;
+  to: string | null;
+  logs: { address: string; topics: string[]; data: string }[];
+};
+
+/**
+ * Accepts an EVM transaction hash (MetaMask path) or a Hedera transaction ID
+ * (`0.0.x@s.n` or mirror `0.0.x-s-n`, native HashPack path). Returns null
+ * while the transaction is not indexed yet.
+ */
+export async function readTransactionReceipt(
+  config: CheckoutConfig,
+  reference: string,
+): Promise<TransactionReceipt | null> {
+  let hash = reference;
+  const native = /^(0\.0\.\d+)[@-](\d+)[.-](\d+)$/.exec(reference);
+  if (native) {
+    const result = (await requestJson(
+      `${config.mirrorUrl}/contracts/results/${native[1]}-${native[2]}-${native[3]}`,
+      undefined,
+      true,
+    )) as { hash?: string } | null;
+    if (!result) return null;
+    hash = String(result.hash);
+  }
+  if (!/^0x[0-9a-fA-F]{64}$/.test(hash))
+    throw new CheckoutError(
+      "INVALID_RECEIPT",
+      "Use a transaction hash or Hedera transaction ID.",
+    );
+  const receipt = (await rpc(config, "eth_getTransactionReceipt", [hash])) as
+    | (Omit<TransactionReceipt, "status"> & { status: string })
+    | null;
+  return receipt && { ...receipt, status: Number(receipt.status) };
 }
 export async function contractRead(
   config: CheckoutConfig,
@@ -532,6 +585,7 @@ export function paymentTransaction(
 }
 
 export type PaymentReceipt = {
+  transactionHash: string;
   id: string;
   payer: string;
   merchant: string;
@@ -543,6 +597,7 @@ export function verifyPaymentReceipt(
   config: CheckoutConfig,
   invoice: Invoice,
   receipt: {
+    transactionHash: string;
     status: number | null;
     to: string | null;
     logs: readonly {
@@ -586,6 +641,7 @@ export function verifyPaymentReceipt(
         "Payment event does not match the invoice terms.",
       );
     return {
+      transactionHash: receipt.transactionHash,
       id: parsed.args.id,
       payer: parsed.args.payer,
       merchant: parsed.args.merchant,

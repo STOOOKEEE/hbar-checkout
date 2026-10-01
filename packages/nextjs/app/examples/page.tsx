@@ -63,9 +63,8 @@ export default function Examples() {
           <div className="setup-note">
             <p>
               These are live pricing examples. They do not collect a payment,
-              deliver a service or credit an account. USDC is read-only; the
-              testnet invoice flow uses SAUCE until a supported alternative is
-              deployed and validated.
+              deliver a service or credit an account. Mainnet USDC is
+              read-only; the testnet invoice flow settles in testnet USDC.
             </p>
           </div>
           <a

@@ -8,7 +8,7 @@
 
 | Component                 | Responsibility                                                   | What it cannot prove                                                  |
 | ------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Browser + injected wallet | Show terms and obtain user signatures                            | A browser success message is not payment evidence                     |
+| Browser + wallet          | Show terms and obtain user signatures (HashPack or EVM wallet)   | A browser success message is not payment evidence                     |
 | Next.js API               | Read configured contracts, mirror metadata and receipts          | A preflight cannot guarantee future liquidity or permission state     |
 | Shared checkout package   | Validate amounts/config, quote, build payment and verify receipt | Does not authenticate your application's customer or fulfill an order |
 | SaucerPay contract        | Store immutable invoice terms and enforce settlement checks      | Does not ship goods, grant credits or reverse completed payments      |
@@ -16,6 +16,13 @@
 | Mirror node / RPC         | Expose metadata, contract state and transaction results          | Reads can lag or fail; a timeout is not a reverted transaction        |
 
 The server holds no signing key. Only wallets sign in the reference UI. The deployment scripts separately use a local testnet key.
+
+[`wallet.ts`](../packages/nextjs/lib/wallet.ts) exposes `connectWallet(config, kind)` with `kind` `"hashpack"` or `"evm"`, returning `{ kind, address, send(request), associate() }`:
+
+- **HashPack:** `@hashgraph/hedera-wallet-connect` `DAppConnector` (`hedera_signAndExecuteTransaction`, chain `hedera:testnet`) and `@hiero-ledger/sdk`, lazy-loaded only when chosen. It uses the HashPack extension if detected, otherwise the WalletConnect QR modal. Writes are native `ContractExecuteTransaction`s; association is a native `TokenAssociateTransaction`. ED25519 accounts work. `msg.sender` is the account's mirror-node `evm_address` (ECDSA alias, or long-zero address for ED25519). `send` returns a Hedera transaction ID.
+- **EVM wallet (MetaMask):** EVM transactions through the JSON-RPC relay; association uses the HIP-719 `associate()` facade. ECDSA accounts only. `send` returns an EVM transaction hash.
+
+`confirm(config, ref)` polls until the receipt is indexed. The invoice ID is read from the receipt's `InvoiceCreated` event.
 
 ## Transaction sequence
 
@@ -55,9 +62,10 @@ Invoice status is set before external calls and protected by a reentrancy guard.
 | Invoice output and ERC20-compatible HTS methods                    | Token smallest unit, determined by token decimals |
 | SaucerSwap `getAmountsIn()[0]`                                     | Tinybar (8 decimal places per HBAR)               |
 | Hedera EVM `msg.value`, `address.balance`, Solidity internal sends | Tinybar                                           |
-| Ethereum JSON-RPC transaction `value`                              | Weibars / RPC wei (18 decimal places per HBAR)    |
+| Ethereum JSON-RPC transaction `value` (EVM wallet)                 | Weibars / RPC wei (18 decimal places per HBAR)    |
+| Native `ContractExecuteTransaction` payable amount (HashPack)      | Tinybar                                           |
 
-`tinybarToRpcWei` performs the **single** conversion at the wallet boundary: multiply by 10^10. `maximumSpend` rounds upward with integer arithmetic. ABI values remain in their actual native units. See the official [Hedera transaction unit documentation](https://docs.hedera.com/hedera/sdks-and-apis/sdks/smart-contracts/ethereum-transaction).
+On the EVM path, `tinybarToRpcWei` performs the **single** conversion at the wallet boundary: multiply by 10^10. The native path takes tinybar directly; `rpcWeiToTinybar` converts a built request back and rejects non-whole tinybar. `maximumSpend` rounds upward with integer arithmetic. ABI values remain in their actual native units. See the official [Hedera transaction unit documentation](https://docs.hedera.com/hedera/sdks-and-apis/sdks/smart-contracts/ethereum-transaction).
 
 ### Worked example (illustrative arithmetic, not a live quote)
 

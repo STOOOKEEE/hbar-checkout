@@ -2,10 +2,73 @@
 
 [README](../README.md) · [Reviewer walkthrough](REVIEW.md)
 
-## Live testnet deployment and payment — 2026-09-22
+## Live testnet USDC deployment and payment — 2026-10-01
 
 The reference checkout is deployed on Hedera testnet (chain 296) at
-`0x92eD50589e2c594c8417234818B6FD7fDEA69334`. The configured settlement
+`0x140e27Cf63790a558d66C8796A67984d5164055E` by deployer
+`0x8EE8292BDD3E80Af225c2a91Afcc45ccA800f0fe`. The settlement asset is the
+testnet token `0.0.5449` ("USD Coin", USDC, six decimals, treasury `0.0.3923`,
+no custom fees, no KYC key, not frozen by default), reached through the real
+SaucerSwap V1 testnet router (`0.0.19264`) and its WHBAR pool. It is **not**
+Circle's testnet USDC issuance `0.0.429274`, which has no direct SaucerSwap V1
+pool (its quote call fails). Testnet pool prices are not market prices.
+No mainnet payment is claimed; mainnet USDC (`0.0.456858`) is a read-only quote.
+
+| Evidence                  | Public result |
+| ------------------------- | ------------- |
+| Contract deployment       | [Successful Hedera Mirror Node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xf7cd48ffb48e9385be5f1be7aa064921754398ab7f1a6f670c251da907d29ed1) · [HashScan](https://hashscan.io/testnet/transaction/0xf7cd48ffb48e9385be5f1be7aa064921754398ab7f1a6f670c251da907d29ed1) |
+| Merchant-created invoice  | Transaction `0xfd9a096c0590465556bee3b07dcf8421512c4f4801024e9384aee4f450f5621a` |
+| Separate-payer settlement | [Successful Hedera Mirror Node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) · [HashScan](https://hashscan.io/testnet/transaction/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) |
+
+The merchant was `0x8EE8292BDD3E80Af225c2a91Afcc45ccA800f0fe`; the separately
+funded payer was `0x43937DB58f8530B47E807CA9A166F2a9fF7F3645`. Invoice
+`0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791`
+is paid with `amountOut` `1000000`: exactly **1 USDC**. The transaction spent
+`43,988,881` tinybar (`0.43988881` HBAR) on conversion and returned `219,945`
+tinybar (`0.00219945` HBAR) of unused input to the payer. Network fees are
+additional. `npm run submission:check` passed against this payment.
+
+The payment was executed with `npm run testnet:payment`, not through a browser
+wallet. The hosted Vercel environment has **not** yet been switched to token
+`0.0.5449` and this checkout; until it is, the hosted app still serves the
+earlier SAUCE deployment below, and the USDC invoice page
+(`/pay/0x08c3…7791?tx=0xbc33…3dd8`) is not available there. Browser/wallet UI
+payment in USDC and mainnet signing have **not** been exercised live.
+
+## Native Hedera transaction path (HashPack code) — 2026-10-01
+
+The native path in [`wallet.ts`](../packages/nextjs/lib/wallet.ts) was exercised
+against the USDC checkout above by a throwaway Node script. It called the same
+`contractExecute`/`tokenAssociate`/`confirm` functions with the local testnet
+keys, **not** through the HashPack app:
+
+- Native `TokenAssociateTransaction` by payer `0.0.10669929`: `SUCCESS`.
+- Native `ContractExecuteTransaction` `createInvoice` by merchant `0.0.10669846`:
+  transaction `0.0.10669846@1790843861.526670156` (EVM hash
+  `0x8bc412b067848682ea87db71d8bbe7615f82faf971e3be6a11af3c8b1da389c6`), invoice
+  `0x87a0b28b9f5491e1771b120d316b4709664395eebeb95d14ce6f49a3ddf098c9`.
+- Native `ContractExecuteTransaction` `payInvoice` by the payer: transaction
+  `0.0.10669929@1790843870.331092130` (EVM hash
+  `0xec5054f6e253d40b846a43aa3f9651e29fdd34a539b03841cc778487a40bbc0c`,
+  [Hedera Mirror Node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xec5054f6e253d40b846a43aa3f9651e29fdd34a539b03841cc778487a40bbc0c)).
+  It delivered exactly 1 USDC, spent `43,989,167` tinybar and refunded `219,946`
+  tinybar. `verifyPaymentReceipt` passed, and the receipt `to` was the checkout
+  EVM address.
+
+On a local production server,
+`/api/invoices/0x87a0…98c9?tx=0.0.10669929@1790843870.331092130` returned the
+invoice as paid and verified. In a browser, the transaction-ID URL rendered
+“Settled and verified”. `npm run smoke`, lint, 22 checkout tests, 11 contract
+tests and the build passed. With a dummy WalletConnect project ID, the
+connector loaded and opened the WalletConnect modal. **No real HashPack wallet
+session or signature has been tested**: that needs a real project ID and a
+HashPack account.
+
+## Earlier SAUCE testnet deployment and payment — 2026-09-22
+
+This earlier record remains valid historical evidence. The checkout was deployed
+on Hedera testnet (chain 296) at
+`0x92eD50589e2c594c8417234818B6FD7fDEA69334`. Its settlement
 asset is SAUCE (`0.0.1183558`, six decimals), reached through the real
 SaucerSwap V1 testnet router (`0.0.19264`). No mainnet payment is claimed.
 
@@ -16,7 +79,7 @@ SaucerSwap V1 testnet router (`0.0.19264`). No mainnet payment is claimed.
 | Separate-payer settlement | [Successful Hedera Mirror Node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) · [HashScan](https://hashscan.io/testnet/transaction/0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) |
 | Hosted receipt            | [Paid invoice with matching transaction](https://saucerpay-hedera.vercel.app/pay/0x8f97d7a7c61394e9f927e2b0d9d7b62fc396d091cfffc0475ab3b13493b58e61?tx=0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1)                                                                         |
 
-![The hosted paid invoice showing exact SAUCE delivery, HBAR spent and unused HBAR returned](paid-invoice.png)
+![The hosted paid invoice from the earlier SAUCE payment, showing exact SAUCE delivery, HBAR spent and unused HBAR returned](paid-invoice.png)
 
 The merchant was `0x8EE8292BDD3E80Af225c2a91Afcc45ccA800f0fe`; the separately
 funded payer was `0x43937DB58f8530B47E807CA9A166F2a9fF7F3645`. Invoice
@@ -50,8 +113,8 @@ its gas. A native Hedera SDK transfer created and funded that account successful
 These failed attempts incurred testnet fees but are not cited as payment proof.
 
 The signed payment was executed through the two-account script, and the hosted
-read/receipt/download flow was tested. Injected-wallet signing, mainnet signing
-and USDC settlement have **not** been exercised live. The
+read/receipt/download flow was tested. Injected-wallet signing and mainnet
+signing were not exercised live in this earlier run. The
 contest entry and developer-experience survey have not been submitted.
 
 ## Fresh public scaffold — 2026-09-22

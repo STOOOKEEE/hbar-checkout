@@ -43,11 +43,11 @@ The generator consumes `template.json`; its absence in the generated app is expe
 
 In the **quote panel** (separate from the merchant invoice form):
 
-1. Set **Quote asset** to **SAUCE · Testnet**.
+1. Set **Quote asset** to **USDC · Testnet**.
 2. Enter `1` in **Requested token amount**.
 3. Click **Get live quote**.
-4. Check the result shows `1 SAUCE`, quoted HBAR, maximum HBAR and a timestamp.
-5. Choose **USDC · Mainnet (read only)** to preview a stablecoin-denominated order, or **SAUCE · Mainnet (read only)** to compare the default token.
+4. Check the result shows `1 USDC`, quoted HBAR, maximum HBAR and a timestamp.
+5. Choose **USDC · Mainnet (read only)** to compare with mainnet liquidity. Testnet pool prices are not market prices.
 
 The maximum includes the preview's 0.5% price movement allowance. It excludes network fees. Values depend on live pool reserves; there is no expected fixed HBAR price.
 
@@ -69,7 +69,7 @@ To exercise the HTTP route while the app runs:
 curl --fail-with-body 'http://localhost:3000/api/quote?network=testnet&amount=1&slippageBps=50'
 ```
 
-Expected: `{"quote": ...}` with integer amounts encoded as strings. For SAUCE's 6 decimals, `amountOut` is `"1000000"`. Prices and expiry vary. [Response fields](REFERENCE.md#http-api).
+Expected: `{"quote": ...}` with integer amounts encoded as strings. For USDC's 6 decimals, `amountOut` is `"1000000"`. Prices and expiry vary. [Response fields](REFERENCE.md#http-api).
 
 ## 5. Verify the local build
 

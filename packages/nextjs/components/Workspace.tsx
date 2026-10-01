@@ -2,16 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Contract, hexlify, randomBytes, formatUnits } from "ethers";
+import { hexlify, randomBytes, formatUnits } from "ethers";
 import {
-  CHECKOUT_ABI,
-  bufferedGasLimit,
-  invoiceId,
+  checkoutInterface,
+  rpc,
   tokenUnits,
   type CheckoutConfig,
   type TokenInfo,
 } from "@saucerpay/checkout";
-import { api, connectWallet, message, shortAddress } from "@/lib/wallet";
+import {
+  api,
+  confirm,
+  connectWallet,
+  message,
+  shortAddress,
+  type WalletKind,
+} from "@/lib/wallet";
 import { QuotePreview } from "@/components/QuotePreview";
 
 type Settings = { config: CheckoutConfig; token: TokenInfo };
@@ -21,6 +27,7 @@ export function Workspace() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [configError, setConfigError] = useState("");
   const [address, setAddress] = useState("");
+  const [walletKind, setWalletKind] = useState<WalletKind>("hashpack");
   const [amount, setAmount] = useState("10");
   const [expiry, setExpiry] = useState("24");
   const [busy, setBusy] = useState("");
@@ -52,69 +59,73 @@ export function Workspace() {
       setBusy("");
     }
   }
-  async function wallet() {
+  async function wallet(kind = walletKind) {
     if (!settings) throw new Error("Wait for the network configuration.");
-    const connected = await connectWallet(settings.config);
+    const connected = await connectWallet(settings.config, kind);
+    setWalletKind(kind);
     setAddress(connected.address);
     return connected;
   }
   async function associate() {
     if (!settings) return;
-    const { signer } = await wallet();
-    const token = new Contract(
-      settings.config.token,
-      ["function associate() returns (int64)"],
-      signer,
+    const connected = await wallet();
+    // HIP-719 associate() dry run: 22 = would succeed, 194 = already associated.
+    const code = BigInt(
+      String(
+        await rpc(settings.config, "eth_call", [
+          { from: connected.address, to: settings.config.token, data: "0x0a754de6" },
+          "latest",
+        ]),
+      ),
     );
-    const code = await token.associate.staticCall();
     if (code === 194n) {
       setNotice("This wallet is already associated with the settlement token.");
       return;
     }
     if (code !== 22n)
       throw new Error(`Hedera refused token association (response ${code}).`);
-    const tx = await token.associate({
-      gasLimit: bufferedGasLimit(await token.associate.estimateGas()),
-    });
-    const receipt = await tx.wait();
-    if (!receipt || receipt.status !== 1)
-      throw new Error("Association was not confirmed.");
+    await connected.associate();
     setNotice(
-      "Association submitted successfully. Allow a few seconds for mirror indexing before creating an invoice.",
+      "Association confirmed. Allow a few seconds for mirror indexing before creating an invoice.",
     );
   }
   async function create() {
     if (!settings?.config.checkout)
       throw new Error("Deploy the checkout contract first.");
-    const { signer, address: merchant } = await wallet();
-    await api(`/api/preflight?merchant=${merchant}`);
+    const connected = await wallet();
+    await api(`/api/preflight?merchant=${connected.address}`);
     const units = tokenUnits(amount, settings.token.decimals);
     const hours = Number(expiry);
     if (!Number.isInteger(hours) || hours < 1 || hours > 720)
       throw new Error("Expiry must be between 1 and 720 hours.");
     const reference = hexlify(randomBytes(32));
-    const contract = new Contract(
-      settings.config.checkout,
-      CHECKOUT_ABI,
-      signer,
-    );
     const expiresAt = Math.floor(Date.now() / 1000) + hours * 3600;
-    const tx = await contract.createInvoice(reference, units, expiresAt, {
-      gasLimit: bufferedGasLimit(
-        await contract.createInvoice.estimateGas(reference, units, expiresAt),
-      ),
+    const sent = await connected.send({
+      to: settings.config.checkout,
+      data: checkoutInterface.encodeFunctionData("createInvoice", [
+        reference,
+        units,
+        expiresAt,
+      ]),
     });
     setNotice("Creating your invoice on Hedera testnet…");
-    const receipt = await tx.wait();
-    if (!receipt || receipt.status !== 1)
+    const receipt = await confirm(settings.config, sent);
+    // Read the ID from the event: msg.sender is authoritative for the merchant.
+    const id = receipt.logs
+      .filter(
+        (log) =>
+          log.address.toLowerCase() === settings.config.checkout?.toLowerCase(),
+      )
+      .map((log) => checkoutInterface.parseLog(log))
+      .find((log) => log?.name === "InvoiceCreated")?.args.id;
+    if (typeof id !== "string")
       throw new Error("Invoice creation was not confirmed.");
-    const id = invoiceId(merchant, reference);
     setCreated((list) => [
       {
         id,
         amount: formatUnits(units, settings.token.decimals),
         symbol: settings.token.symbol,
-        hash: receipt.hash,
+        hash: receipt.transactionHash,
       },
       ...list,
     ]);
@@ -221,7 +232,9 @@ export function Workspace() {
               <div>
                 <label htmlFor="settlement-token">Settlement token</label>
                 <div id="settlement-token" className="read-field">
-                  <span className="token-symbol">S</span>
+                  <span className="token-symbol">
+                    {settings?.token.symbol.charAt(0) || "·"}
+                  </span>
                   {settings?.token.name || "Loading token…"}
                   <small>{settings?.config.tokenId}</small>
                 </div>
@@ -247,24 +260,27 @@ export function Workspace() {
                   {address ? shortAddress(address) : "Your connected wallet"}
                 </p>
               </div>
-              <button
-                type="button"
-                className="button secondary small"
-                disabled={
-                  !!busy || !settings || settings.config.network !== "testnet"
-                }
-                onClick={() =>
-                  void run("connect", async () => {
-                    await wallet();
-                  })
-                }
-              >
-                {busy === "connect"
-                  ? "Connecting…"
-                  : address
-                    ? "Change wallet"
-                    : "Connect wallet"}
-              </button>
+              <div className="wallet-choice">
+                {(["hashpack", "evm"] as const).map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    className={`button small ${address && walletKind === kind ? "primary" : "secondary"}`}
+                    disabled={
+                      !!busy ||
+                      !settings ||
+                      settings.config.network !== "testnet"
+                    }
+                    onClick={() =>
+                      void run("connect", async () => {
+                        await wallet(kind);
+                      })
+                    }
+                  >
+                    {kind === "hashpack" ? "HashPack" : "MetaMask"}
+                  </button>
+                ))}
+              </div>
             </div>
             <button
               className="button primary full"

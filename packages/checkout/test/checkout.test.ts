@@ -14,6 +14,8 @@ import {
   quotePayment,
   previewConfig,
   bufferedGasLimit,
+  rpcWeiToTinybar,
+  readTransactionReceipt,
 } from "../src/index";
 import type { Invoice, Quote } from "../src/index";
 
@@ -68,6 +70,37 @@ describe("money and transaction construction", () => {
     expect(
       checkoutInterface.decodeFunctionData("payInvoice", transaction.data)[0],
     ).toBe(invoice.id);
+  });
+  it("returns the exact tinybar payable to native Hedera transactions", () => {
+    const transaction = paymentTransaction(config, quote, 1000);
+    expect(rpcWeiToTinybar(transaction.value)).toBe(102n);
+    // A sub-tinybar remainder would silently lose value on the native path.
+    expect(() => rpcWeiToTinybar(transaction.value + 1n)).toThrow(/tinybar/);
+  });
+  it("resolves a native Hedera transaction ID to its EVM receipt", async () => {
+    const hash = `0x${"cd".repeat(32)}`;
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 404 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ hash })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            result: { transactionHash: hash, status: "0x1", to: null, logs: [] },
+          }),
+        ),
+      );
+    vi.stubGlobal("fetch", fetcher);
+    const id = "0.0.42@1790843870.331092130";
+    expect(await readTransactionReceipt(config, id)).toBeNull();
+    expect((await readTransactionReceipt(config, id))?.status).toBe(1);
+    expect(fetcher.mock.calls[1][0]).toBe(
+      `${config.mirrorUrl}/contracts/results/0.0.42-1790843870-331092130`,
+    );
+    expect(JSON.parse(fetcher.mock.calls[2][1].body).params).toEqual([hash]);
+    await expect(readTransactionReceipt(config, "0x12")).rejects.toThrow(
+      /transaction hash/,
+    );
   });
   it("rejects stale quotes, mismatched invoice amounts and mainnet writes", () => {
     expect(() => paymentTransaction(config, quote, 1060)).toThrow(/Refresh/);
@@ -140,6 +173,7 @@ describe("receipt verification", () => {
       [invoice.id, entityAddress("0.0.101"), merchant, amount, 80n, 20n],
     );
     return {
+      transactionHash: `0x${"ab".repeat(32)}`,
       status: 1,
       to: config.checkout,
       logs: [{ address: config.checkout!, ...event }],
@@ -173,9 +207,10 @@ describe("live integration boundary", () => {
     expect(usdc.network).toBe("mainnet");
     expect(usdc.tokenId).toBe("0.0.456858");
     expect(usdc.checkout).toBeNull();
+    expect(previewConfig("testnet-usdc").tokenId).toBe("0.0.5449");
     expect(previewConfig("testnet-sauce").network).toBe("testnet");
   });
-  it.each(["testnet-usdc", "__proto__", "constructor", "0.0.999"])(
+  it.each(["mainnet-hbar", "__proto__", "constructor", "0.0.999"])(
     "rejects unsupported preview input %s instead of selecting an arbitrary asset",
     (preset) =>
       expect(() => previewConfig(preset)).toThrow(/supported quote asset/),

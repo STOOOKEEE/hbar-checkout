@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Contract, formatUnits } from "ethers";
+import { formatUnits } from "ethers";
 import {
-  CHECKOUT_ABI,
-  bufferedGasLimit,
+  checkoutInterface,
   hbarDisplay,
   paymentTransaction,
   verifyPaymentReceipt,
@@ -15,7 +14,14 @@ import {
   type Quote,
   type PaymentReceipt,
 } from "@saucerpay/checkout";
-import { api, connectWallet, message, shortAddress } from "@/lib/wallet";
+import {
+  api,
+  confirm,
+  connectWallet,
+  message,
+  shortAddress,
+  type WalletKind,
+} from "@/lib/wallet";
 
 type InvoiceData = {
   config: CheckoutConfig;
@@ -33,6 +39,7 @@ export function Payment({ id }: { id: string }) {
   const [busy, setBusy] = useState("");
   const [now, setNow] = useState(0);
   const [txHash, setTxHash] = useState("");
+  const [walletKind, setWalletKind] = useState<WalletKind>("hashpack");
   const [payment, setPayment] = useState<PaymentReceipt | null>(null);
 
   const load = useCallback(async () => {
@@ -84,25 +91,17 @@ export function Payment({ id }: { id: string }) {
   }
   async function pay() {
     if (!data || !quote) return;
-    const { signer } = await connectWallet(data.config);
-    const request = paymentTransaction(data.config, quote);
-    const tx = await signer.sendTransaction({
-      ...request,
-      gasLimit: bufferedGasLimit(await signer.estimateGas(request)),
-    });
-    setTxHash(tx.hash);
-    // Persist the hash before waiting so refreshing can reconcile a submitted payment.
+    const wallet = await connectWallet(data.config, walletKind);
+    const sent = await wallet.send(paymentTransaction(data.config, quote));
+    setTxHash(sent);
+    // Persist the hash/transaction ID before waiting so refreshing can reconcile a submitted payment.
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}?tx=${tx.hash}`,
+      `${window.location.pathname}?tx=${encodeURIComponent(sent)}`,
     );
     setNotice("Payment submitted. Waiting for its receipt…");
-    const receipt = await tx.wait();
-    if (!receipt)
-      throw new Error(
-        "Receipt not available yet. Use Refresh status to reconcile the transaction.",
-      );
+    const receipt = await confirm(data.config, sent);
     const verified = verifyPaymentReceipt(data.config, data.invoice, receipt);
     setPayment(verified);
     setData({ ...data, invoice: { ...data.invoice, status: "paid" } });
@@ -111,23 +110,23 @@ export function Payment({ id }: { id: string }) {
   }
   async function cancel() {
     if (!data?.config.checkout) return;
-    const { signer, address } = await connectWallet(data.config);
-    if (address.toLowerCase() !== data.invoice.merchant.toLowerCase())
+    const wallet = await connectWallet(data.config, walletKind);
+    if (wallet.address.toLowerCase() !== data.invoice.merchant.toLowerCase())
       throw new Error("Only the merchant wallet can cancel this invoice.");
-    const contract = new Contract(data.config.checkout, CHECKOUT_ABI, signer);
-    const tx = await contract.cancelInvoice(id, {
-      gasLimit: bufferedGasLimit(await contract.cancelInvoice.estimateGas(id)),
-    });
-    const receipt = await tx.wait();
-    if (!receipt || receipt.status !== 1)
-      throw new Error("Cancellation was not confirmed.");
+    await confirm(
+      data.config,
+      await wallet.send({
+        to: data.config.checkout,
+        data: checkoutInterface.encodeFunctionData("cancelInvoice", [id]),
+      }),
+    );
     setData({ ...data, invoice: { ...data.invoice, status: "cancelled" } });
     setQuote(null);
     setNotice("Invoice cancelled.");
   }
 
   function downloadReceipt() {
-    if (!data || !payment || !txHash) return;
+    if (!data || !payment) return;
     const evidence = {
       network: data.config.network,
       chainId: data.config.chainId,
@@ -139,8 +138,8 @@ export function Payment({ id }: { id: string }) {
       payer: payment.payer,
       spentTinybar: payment.spentTinybar,
       refundedTinybar: payment.refundedTinybar,
-      paymentHash: txHash,
-      hashscan: `https://hashscan.io/${data.config.network}/transaction/${txHash}`,
+      paymentHash: payment.transactionHash,
+      hashscan: `https://hashscan.io/${data.config.network}/transaction/${payment.transactionHash}`,
     };
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(evidence, null, 2)], {
@@ -232,6 +231,18 @@ export function Payment({ id }: { id: string }) {
                   <option value="50">0.5%</option>
                   <option value="100">1%</option>
                 </select>
+                <label htmlFor="wallet-kind">Wallet</label>
+                <select
+                  id="wallet-kind"
+                  value={walletKind}
+                  disabled={!!busy}
+                  onChange={(event) =>
+                    setWalletKind(event.target.value as WalletKind)
+                  }
+                >
+                  <option value="hashpack">HashPack</option>
+                  <option value="evm">MetaMask (ECDSA account)</option>
+                </select>
                 <button
                   className="button secondary full spaced"
                   disabled={!!busy}
@@ -296,7 +307,7 @@ export function Payment({ id }: { id: string }) {
                   {hbarDisplay(BigInt(payment.refundedTinybar))} HBAR returned
                 </p>
                 <a
-                  href={`https://testnet.mirrornode.hedera.com/api/v1/contracts/results/${txHash}`}
+                  href={`https://testnet.mirrornode.hedera.com/api/v1/contracts/results/${payment.transactionHash}`}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -358,13 +369,17 @@ export function Payment({ id }: { id: string }) {
         {txHash && !payment && (
           <p className="muted">
             Submitted transaction:{" "}
-            <a
-              href={`https://hashscan.io/testnet/transaction/${txHash}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {shortAddress(txHash)} ↗
-            </a>
+            {txHash.startsWith("0x") ? (
+              <a
+                href={`https://hashscan.io/testnet/transaction/${txHash}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {shortAddress(txHash)} ↗
+              </a>
+            ) : (
+              <code>{txHash}</code>
+            )}
             . Refresh status before retrying payment.
           </p>
         )}

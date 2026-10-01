@@ -42,9 +42,9 @@ Read only the **Voiceover** text. The screen directions and bracketed name are p
 
 ### 01:25–02:02 — Real testnet proof
 
-**Screen:** open the [paid invoice](https://saucerpay-hedera.vercel.app/pay/0x8f97d7a7c61394e9f927e2b0d9d7b62fc396d091cfffc0475ab3b13493b58e61?tx=0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1). Zoom on `Paid`, merchant and payer addresses, `1 SAUCE`, spent HBAR and refund. Then show the successful [Hedera Mirror Node transaction](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) and the receipt download. Do not show a wallet click as though it produced this transaction.
+**Screen:** only after the hosted Vercel environment is updated to token `0.0.5449` and checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`, open the [paid USDC invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) and zoom on `Paid`, merchant and payer addresses, `1 USDC`, spent HBAR and refund. Until then, skip the paid page. Show the successful [Hedera Mirror Node transaction](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8). Do not show a wallet click as though it produced this transaction.
 
-**Voiceover:** “Here is an actual Hedera testnet payment with a separate payer and merchant. The merchant received exactly one SAUCE. Conversion spent 0.01819519 H-bar, and 0.00009098 H-bar of unused input returned to the payer; network fees are separate. The public mirror-node result and the downloadable receipt verify the invoice and transaction. We executed this payment with the included two-account testnet script.”
+**Voiceover:** “Here is an actual Hedera testnet payment with a separate payer and merchant. The merchant received exactly one testnet USDC. Conversion spent 0.43988881 H-bar, and 0.00219945 H-bar of unused input returned to the payer; network fees are separate. Testnet pool prices are not market prices. The public mirror-node result verifies the invoice and transaction. We executed this payment with the included two-account testnet script.”
 
 ### 02:02–02:35 — Why a developer would start here
 
@@ -54,14 +54,14 @@ Read only the **Voiceover** text. The screen directions and bracketed name are p
 
 ### 02:35–02:52 — Clear limit and close
 
-**Screen:** project title, hosted demo and GitHub URL. Small visible caption: `Testnet SAUCE payment verified · Mainnet USDC quote read-only`.
+**Screen:** project title, hosted demo and GitHub URL. Small visible caption: `Testnet USDC payment verified · Mainnet USDC quote read-only`.
 
 **Voiceover:** “The USDC mainnet screen is a live quote preview, not a settled mainnet payment. The verified settlement is on testnet. Inspect the code, run the scaffold, and reproduce that payment with the validation guide. If your Hedera app needs H-bar-funded token checkout, SaucerPay gives you a working starting point.”
 
 ## Capture and edit checklist
 
 - Record the hosted app at **1920×1080, 16:9, 30 fps**, zooming the browser UI enough for readable amounts. Keep browser notifications, personal accounts and wallet secrets out of frame. Existing silent local clips cover 51 seconds of product and docs footage; use them as source material, not as evidence of a new payment.
-- Make the onscreen distinction between **mainnet USDC quote** and **testnet SAUCE payment** visible throughout. The testnet transaction, paid page and mirror-node result are the payment evidence.
-- Prefer hard cuts and close-ups of the values being discussed. Add captions for `1 SAUCE`, `0.01819519 HBAR spent` and `0.00009098 HBAR returned`. Keep narration quieter under any interface sound; the existing clips are silent.
+- Make the onscreen distinction between **mainnet USDC quote** and **testnet USDC payment** visible throughout. The testnet transaction, mirror-node result and (once the hosted env is updated) paid page are the payment evidence.
+- Prefer hard cuts and close-ups of the values being discussed. Add captions for `1 USDC`, `0.43988881 HBAR spent` and `0.00219945 HBAR returned`. Keep narration quieter under any interface sound; the existing clips are silent.
 - Check every visible URL and number against [Validation](VALIDATION.md). The separate payer/merchant addresses and amounts are recorded there. Readability and proof matter more than a long talking-head segment.
 - Export H.264/AAC MP4, 1080p, with subtitles if practical. Watch it once without sound: the mainnet read-only label, testnet proof and developer entry point should still be clear. Host the final video at a public URL accessible without login before entering it into the submission form.

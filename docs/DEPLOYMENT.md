@@ -2,25 +2,25 @@
 
 [README](../README.md) · Before this: [first run](GETTING_STARTED.md) · [Troubleshooting](TROUBLESHOOTING.md)
 
-**Outcome:** deploy your own checkout, receive a token payment from HBAR, and retain genuine transaction evidence. The reference deployment and a two-wallet payment are [publicly verified](VALIDATION.md#live-testnet-deployment-and-payment--2026-09-22). Follow the checkpoints below for your own copy; placeholders are not deployed addresses.
+**Outcome:** deploy your own checkout, receive a token payment from HBAR, and retain genuine transaction evidence. The reference testnet USDC deployment and a two-wallet payment are [publicly verified](VALIDATION.md#live-testnet-usdc-deployment-and-payment--2026-10-01). Follow the checkpoints below for your own copy; placeholders are not deployed addresses.
 
 You do not need a key to install, lint, test, build, start the app or read live quotes. You need a funded **Hedera testnet ECDSA secp256k1 account** to deploy and sign payments.
 
 | Role     | Needs                                                            | Signs                                                          |
 | -------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
 | Deployer | Funded testnet ECDSA key in Hardhat's local env                  | Contract deployment                                            |
-| Merchant | Funded injected testnet EVM wallet, settlement-token association | Association if needed, invoice creation, optional cancellation |
-| Payer    | Funded injected testnet EVM wallet                               | Invoice payment (HBAR conversion plus network fees)            |
+| Merchant | Funded testnet wallet (HashPack or EVM), settlement-token association | Association if needed, invoice creation, optional cancellation |
+| Payer    | Funded testnet wallet (HashPack or EVM)                          | Invoice payment (HBAR conversion plus network fees)            |
 
-The deployer does not have to be the merchant. One account can perform all roles for the automated smoke; separate wallets demonstrate the actual buyer/seller flow. The payer needs no SAUCE balance for an HBAR-input payment.
+The deployer does not have to be the merchant. One account can perform all roles for the automated smoke; separate wallets demonstrate the actual buyer/seller flow. The payer needs no USDC balance for an HBAR-input payment.
 
 ## 1. Create and fund a testnet account
 
-Use the [Hedera Portal](https://portal.hedera.com/) and its [faucet](https://portal.hedera.com/faucet). Select/create an ECDSA account suitable for EVM transactions, and obtain testnet HBAR. Keep the account ID, EVM address and private key locally. If your existing account only has an ED25519 key, create a suitable ECDSA testnet account for this template.
+Use the [Hedera Portal](https://portal.hedera.com/) and its [faucet](https://portal.hedera.com/faucet). The Hardhat deployment and smoke scripts need an ECDSA account suitable for EVM transactions; obtain testnet HBAR and keep the account ID, EVM address and private key locally. In the UI, HashPack also works with ED25519 accounts; MetaMask needs ECDSA.
 
 The Hardhat key format is a 32-byte secp256k1 private key with a `0x` prefix (64 hexadecimal digits after it). Hedera SDK DER-encoded keys are not interchangeable with that format. Use the portal/wallet's raw EVM key export or the official SDK conversion for your key type; do not truncate a key by guessing.
 
-The merchant and payer both need testnet HBAR for transaction fees. The payer also needs enough HBAR to cover the displayed maximum conversion amount. Start with a small invoice. SAUCE in the example is a token amount, not a US dollar amount.
+The merchant and payer both need testnet HBAR for transaction fees. The payer also needs enough HBAR to cover the displayed maximum conversion amount. Start with a small invoice. Testnet USDC pool prices are not market prices: on 2026-10-01, 1 USDC was quoted at `0.43988881` HBAR.
 
 ## 2. Configure the deployment signer
 
@@ -37,7 +37,7 @@ HEDERA_PRIVATE_KEY=<your-funded-testnet-ECDSA-key>
 # Optional: separate, funded testnet payer for the payment smoke.
 HEDERA_PAYER_PRIVATE_KEY=
 HEDERA_RPC_URL=https://testnet.hashio.io/api
-HEDERA_TOKEN_ID=0.0.1183558
+HEDERA_TOKEN_ID=0.0.5449
 MAX_TESTNET_HBAR=1
 ```
 
@@ -76,26 +76,27 @@ Set the actual deployed address:
 
 ```dotenv
 HEDERA_NETWORK=testnet
-HEDERA_TOKEN_ID=0.0.1183558
+HEDERA_TOKEN_ID=0.0.5449
 HEDERA_CHECKOUT_ADDRESS=<actual-deployed-EVM-address>
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=<public-project-id-from-cloud.reown.com>
 ```
 
 Run/restart `npm run dev`. Environment changes require restarting the Next.js process.
 
-For your hosted Vercel copy, set the same three server variables in project settings and redeploy. Never add the Hardhat key to Vercel. See [web hosting](HOSTING.md).
+For your hosted Vercel copy, set the same server variables and `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` in project settings and redeploy. The project ID is public, not a secret; without it HashPack is unavailable but MetaMask still works. Never add the Hardhat key to Vercel. See [web hosting](HOSTING.md).
 
-Use an injected EVM wallet such as MetaMask with a funded testnet ECDSA account. The Connect button requests Hedera testnet (chain 296 / `0x128`) and offers the canonical testnet RPC if the wallet does not know it. For a realistic demo, use separate merchant and payer wallets or browser profiles.
+In the workspace, choose **HashPack** (default) or **MetaMask**; the payment page has a **Wallet** selector. HashPack connects through its browser extension if detected, otherwise a WalletConnect QR code for mobile, and signs native Hedera transactions (ED25519 or ECDSA accounts). MetaMask needs a funded testnet ECDSA account; its Connect button requests Hedera testnet (chain 296 / `0x128`) and offers the canonical testnet RPC if the wallet does not know it. For a realistic demo, use separate merchant and payer wallets or browser profiles.
 
 **Checkpoint:** `/api/config` returns your checkout address and the intended token. The quote-panel network selector is only a preview selector; it does not change the deployed contract.
 
 ## 5. Merchant and payer flow
 
 1. Connect the merchant wallet. Click **Associate the settlement token**. Association is a Hedera token operation signed by that account, not an ERC20 spending approval.
-2. Allow mirror-node indexing to catch up. Create a small invoice, such as `1 SAUCE`. The merchant signs invoice creation.
+2. Allow mirror-node indexing to catch up. Create a small invoice, such as `1 USDC`. The merchant signs invoice creation.
 3. Open the payment page and copy its URL. Record this link: the workspace's list only lasts for the current session.
 4. Open it using the payer wallet. Request a quote, review maximum HBAR spend plus additional network fees, then pay.
 5. The payment page verifies the actual receipt against invoice ID, merchant, amount and emitting checkout contract.
-6. Reload the URL containing `?tx=<actual-hash>`. The server retrieves and verifies the receipt again. Save the HashScan/mirror link for the bounty. **Download verified receipt** exports public payment JSON; `npm run submission:check -- /path/to/receipt.json` independently rechecks it against the network.
+6. Reload the URL containing `?tx=<actual-reference>`: a `0x` EVM hash (MetaMask) or a Hedera transaction ID such as `0.0.x@s.n` (HashPack). The server retrieves and verifies the receipt again. Save the HashScan/mirror link for the bounty. **Download verified receipt** exports public payment JSON; `npm run submission:check -- /path/to/receipt.json` independently rechecks it against the network.
 
 **Checkpoint:** the invoice shows paid, the receipt matches the configured contract/invoice/merchant/amount, and the merchant's token balance increased by the invoice amount. A payment screenshot or a wallet notification alone is insufficient. Save the payment link before closing the workspace; its invoice list is not a persistent history.
 
@@ -111,7 +112,7 @@ npm run testnet:payment
 
 The script enforces `MAX_TESTNET_HBAR` before submitting association or invoice transactions. The cap covers conversion only, not network fees. It writes actual evidence to `deployments/payment-evidence.json`: creation hash, payment hash, amount received, HBAR spent/refunded, and explorer links.
 
-This is a live testnet integration check. It is separate from `npm test`, which uses local mocks. The script now supports separate merchant and payer accounts, but its success does not replace testing the injected-wallet UI. The live run exposed a Hedera gas estimate too tight for invoice creation; the script and UI add headroom before submitting writes. Network fees are additional to the HBAR conversion cap.
+This is a live testnet integration check. It is separate from `npm test`, which uses local mocks. The script now supports separate merchant and payer accounts, but its success does not replace testing the wallet UI (no real HashPack or MetaMask signature has been exercised live). The live run exposed a Hedera gas estimate too tight for invoice creation; the script and UI add headroom before submitting writes. Network fees are additional to the HBAR conversion cap.
 
 ## Common blockers
 

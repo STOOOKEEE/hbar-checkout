@@ -63,7 +63,9 @@ export default function Guide() {
         <p>
           The contract binds the merchant and amount. Your app attaches its
           order ID to the invoice reference and only fulfills the order after
-          verifying an <code>InvoicePaid</code> receipt.
+          verifying an <code>InvoicePaid</code> receipt. This snippet uses an
+          ethers signer; HashPack instead submits the same request as a native{" "}
+          <code>ContractExecuteTransaction</code> (see <code>lib/wallet.ts</code>).
         </p>
       </section>
       <section className="panel">

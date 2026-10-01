@@ -19,7 +19,7 @@ async function main() {
   };
   const router = entity("0.0.19264");
   const whbar = entity("0.0.15058");
-  const tokenId = process.env.HEDERA_TOKEN_ID || "0.0.1183558";
+  const tokenId = process.env.HEDERA_TOKEN_ID || "0.0.5449";
   const token = entity(tokenId);
   const metadataResponse = await fetch(
     `https://testnet.mirrornode.hedera.com/api/v1/tokens/${tokenId}`,

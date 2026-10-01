@@ -368,6 +368,10 @@ select:focus {
   padding-top: 20px;
   border-top: 1px dashed #e2e7da;
 }
+.wallet-choice {
+  display: flex;
+  gap: 8px;
+}
 .recipient-row p {
   font-size: 12px;
   margin: 3px 0 0;

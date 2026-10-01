@@ -24,7 +24,7 @@ Start with the error code or text. Keep network, token ID, contract address and 
 | `INVALID_NETWORK`                          | Only `testnet` and `mainnet` are accepted                              | Correct query or env; restart after env changes                                                                 |
 | `INVALID_ENTITY` / `INVALID_ADDRESS`       | Malformed token ID or EVM address                                      | Use token `0.0.x` ID and the actual `0x…` checkout address printed by deployment                                |
 | `DEPLOYMENT_REQUIRED`                      | Checkout address is unset                                              | Deploy and configure `packages/nextjs/.env.local`; hosting alone does not deploy a contract                     |
-| `DEPLOYMENT_MISMATCH`                      | Contract immutables differ from server config                          | Compare network, token and checkout; do not reuse a SAUCE contract for USDC                                     |
+| `DEPLOYMENT_MISMATCH`                      | Contract immutables differ from server config                          | Compare network, token and checkout; do not reuse a SAUCE contract for USDC (or vice versa)                     |
 | `UNSUPPORTED_TOKEN`                        | Token is inactive/nonfungible, has unsupported decimals or custom fees | Choose a supported active fungible asset; do not bypass the checks                                              |
 | `ASSOCIATION_REQUIRED`                     | Merchant does not have the token relationship                          | Connect the merchant and associate; allow mirror indexing to catch up                                           |
 | `TOKEN_RESTRICTED`                         | Merchant is frozen or KYC is revoked                                   | Check token policy; association alone cannot grant the required authorization                                   |
@@ -51,9 +51,12 @@ For custom-token configuration, use the app API: `npm run probe` always probes t
 
 ## Wallet and deployment
 
-- **No wallet found:** use a browser with an injected EVM wallet, such as MetaMask. A mobile WalletConnect/HashPack flow is not bundled.
+- **No wallet found:** choose **HashPack** (extension, or WalletConnect QR for mobile) or use a browser with an injected EVM wallet such as MetaMask.
+- **“HashPack needs NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID”:** create a free project ID at [cloud.reown.com](https://cloud.reown.com), set it in `packages/nextjs/.env.local` (and Vercel), then restart/redeploy. MetaMask works without it.
+- **ED25519 account cannot sign with MetaMask:** EVM transactions need an ECDSA account. Use HashPack, which signs native Hedera transactions with ED25519 accounts.
+- **Recovering a payment by ID:** the payment page `?tx=` accepts a `0x` hash or a Hedera transaction ID (`0.0.x@s.n` or `0.0.x-s-n`). `PENDING_RECEIPT` means the mirror node has not indexed it yet; retry the read, not the payment.
 - **Wallet request cancelled:** nothing can proceed without the signature. Restart the intended action when ready; fetch a fresh quote before paying.
-- **Wrong chain:** switch to Hedera testnet (296 / `0x128`). The built-in connector offers to add it. Previewing mainnet prices does not switch the wallet.
+- **Wrong chain (MetaMask):** switch to Hedera testnet (296 / `0x128`). The built-in connector offers to add it. HashPack connects to `hedera:testnet`. Previewing mainnet prices does not switch the wallet.
 - **Invalid key:** Hardhat requires a raw 32-byte ECDSA secp256k1 key with `0x` prefix. ED25519 and DER-encoded SDK keys are different formats. Do not truncate them by guessing.
 - **Insufficient HBAR:** merchant needs fees for association/creation; payer needs the maximum conversion spend **plus** network fees. A reverted transaction may still consume fees.
 - **`INSUFFICIENT_GAS` after wallet submission:** inspect the actual HashScan/mirror receipt. A live invoice creation exhausted Hedera's unbuffered `113,262`-gas estimate. Current script and UI double the estimate for writes; update an older copy before retrying a still-open action. Failed transactions may consume network fees.

@@ -14,7 +14,7 @@ Sources: [HashFast in Hedera's winners announcement](https://hedera.com/blog/the
 
 **Proposed adaptation:** a service portal requests 100 USDC; the customer pays HBAR and the merchant receives exactly 100 USDC or settlement reverts. The portal developer reuses invoice terms, live conversion, bounded spend and receipt verification, then adds their customer records and accounting integration.
 
-**Current boundary:** the working example is SAUCE. It is not a compliant accounting/invoicing product or a bank payout service. USDC needs an appropriate token configuration and pool plus a validated payment. No HashFast or xMoney integration, endorsement or customer relationship is claimed.
+**Current boundary:** the working example settles in testnet USDC (`0.0.5449`); mainnet USDC is a read-only quote. It is not a compliant accounting/invoicing product or a bank payout service. No HashFast or xMoney integration, endorsement or customer relationship is claimed.
 
 ## 2. Prepaid API or compute credits
 
@@ -30,9 +30,9 @@ Sources: [Novalax's README](https://github.com/VinGitonga/novalax-app), [Hedera 
 
 The template supports one active fungible HTS token without custom transfer fees per deployment, with a usable direct WHBAR/token pool. The merchant must be associated and allowed to receive it. A token symbol alone does not prove any of these conditions.
 
-A read-only mainnet quote for 25 native USDC was observed during research on 2026-09-22 using token `0.0.456858`. The attempted testnet quote using `0.0.429274` failed with a contract-call error. This does not by itself diagnose a missing pool, and it is not a successful USDC payment. [Circle's official USDC token identifiers](https://developers.circle.com/stablecoins/usdc-contract-addresses).
+The reference settlement token is testnet USDC `0.0.5449` ("USD Coin", six decimals, no custom fees, no KYC key, not frozen by default), which has a SaucerSwap V1 WHBAR pool. A [two-wallet testnet payment](VALIDATION.md#live-testnet-usdc-deployment-and-payment--2026-10-01) delivered exactly 1 USDC on 2026-10-01. It is not Circle's testnet USDC issuance `0.0.429274`, which has no direct SaucerSwap V1 pool: its quote call fails. Testnet pool prices are not market prices (1 USDC was quoted at `0.43988881` HBAR). [Circle's official USDC token identifiers](https://developers.circle.com/stablecoins/usdc-contract-addresses).
 
-Keep SAUCE as the reproducible example until an alternative is validated. Document new token/pool checks and real transaction evidence before promoting another settlement asset as supported end to end.
+On mainnet, native USDC `0.0.456858` is quoted read-only; no mainnet payment is enabled or claimed. SAUCE (`testnet-sauce`, `mainnet-sauce` presets) remains available for comparison. Document new token/pool checks and real transaction evidence before promoting another settlement asset as supported end to end.
 
 ## What we deliberately do not promise
 

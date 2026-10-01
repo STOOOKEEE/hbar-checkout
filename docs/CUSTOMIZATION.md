@@ -135,7 +135,7 @@ Set the same testnet `HEDERA_TOKEN_ID` in both package env files, validate a rea
 
 Do not overwrite an existing deployment's configuration and assume old links still work. The reference app serves one configured contract; keep the old instance available or implement routes that explicitly select a validated deployment. Save deployment identity in every order record.
 
-[USDC feasibility and current limits](USE_CASES.md#choosing-a-settlement-token). Changing `SAUCE` to `USDC` in the UI is not a token integration.
+[Settlement token choice and current limits](USE_CASES.md#choosing-a-settlement-token). Changing a token label in the UI is not a token integration; the deployed contract's token must match the configured one.
 
 ## Extension map
 

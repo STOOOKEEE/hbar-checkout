@@ -2,13 +2,13 @@
 
 [README](../README.md) · [Validation record](VALIDATION.md) · [Official bounty brief](https://hedera.com/blog/scaffold-hbar-template-bounty/)
 
-This is a navigation guide to the implementation and [verified testnet evidence](VALIDATION.md#live-testnet-deployment-and-payment--2026-09-22). The contest submission and organizer eligibility review have not occurred.
+This is a navigation guide to the implementation and [verified testnet evidence](VALIDATION.md#live-testnet-usdc-deployment-and-payment--2026-10-01). The contest submission and organizer eligibility review have not occurred.
 
 For a ready-to-adapt pitch, timed demo and evidence preflight, use [Submission package](SUBMISSION.md).
 
 ## 1. Try the integration without setup
 
-Open [the live demo](https://saucerpay-hedera.vercel.app), enter `1` in the quote panel and request SAUCE testnet and USDC mainnet quotes using the quote-asset selector. They read SaucerSwap; no fabricated price is substituted for a failed request. The hosted app is configured with the testnet checkout. Open the [paid invoice](https://saucerpay-hedera.vercel.app/pay/0x8f97d7a7c61394e9f927e2b0d9d7b62fc396d091cfffc0475ab3b13493b58e61?tx=0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) to inspect a real two-wallet receipt without a wallet.
+Open [the live demo](https://saucerpay-hedera.vercel.app), enter `1` in the quote panel and request testnet and mainnet USDC quotes using the quote-asset selector. They read SaucerSwap; no fabricated price is substituted for a failed request. The hosted environment has not yet been switched to the USDC checkout: it still serves the [earlier SAUCE deployment](VALIDATION.md#earlier-sauce-testnet-deployment-and-payment--2026-09-22), whose [paid invoice](https://saucerpay-hedera.vercel.app/pay/0x8f97d7a7c61394e9f927e2b0d9d7b62fc396d091cfffc0475ab3b13493b58e61?tx=0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) shows a real two-wallet SAUCE receipt without a wallet.
 
 ## 2. Generate and run a clean copy
 
@@ -33,8 +33,8 @@ The exact-output conversion and surplus return are implemented in a single payme
 
 ## 4. Check chain evidence honestly
 
-[Deploy on testnet](DEPLOYMENT.md), then exercise the two-wallet UI flow or optional smoke. The published [mirror-node payment result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) has separate merchant and payer accounts and passes `npm run submission:check`. The automated smoke supports either one or two accounts and labels the evidence accordingly. The injected-wallet UI signing path has not yet been exercised live.
+[Deploy on testnet](DEPLOYMENT.md), then exercise the two-wallet UI flow or optional smoke. The published [mirror-node USDC payment result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) has separate merchant and payer accounts and passes `npm run submission:check`. The automated smoke supports either one or two accounts and labels the evidence accordingly. The injected-wallet UI signing path has not yet been exercised live with USDC.
 
-The [validation record](VALIDATION.md#live-testnet-deployment-and-payment--2026-09-22) gives the genuine testnet links, network, contract, token, invoice and observed result. Contract deployment proves deployment; the successful invoice payment demonstrates the conversion and exact token delivery. A quote, screenshot or local mock cannot stand in for either transaction.
+The [validation record](VALIDATION.md#live-testnet-usdc-deployment-and-payment--2026-10-01) gives the genuine testnet links, network, contract, token, invoice and observed result. Contract deployment proves deployment; the successful invoice payment demonstrates the conversion and exact token delivery. A quote, screenshot or local mock cannot stand in for either transaction.
 
 Also complete the official submission fields, including the developer-experience survey. This repository did not use Hedera Harness and does not claim a harness specification or harness validators. Consult the current brief for the final submission requirements.

@@ -6,6 +6,7 @@ import {
   assertDeployment,
   networkConfig,
   readInvoice,
+  readTransactionReceipt,
   rpc,
   validateInvoiceId,
   verifyPaymentReceipt,
@@ -105,19 +106,10 @@ if (!existsSync(evidencePath)) {
       throw new Error("The RPC is not Hedera testnet.");
     await assertDeployment(config);
     const invoice = await readInvoice(config, evidence.invoiceId);
-    const receipt = (await rpc(config, "eth_getTransactionReceipt", [
-      evidence.paymentHash,
-    ])) as {
-      status: string;
-      to: string | null;
-      logs: { address: string; topics: string[]; data: string }[];
-    } | null;
+    const receipt = await readTransactionReceipt(config, evidence.paymentHash);
     if (!receipt)
       throw new Error("Receipt is not indexed; retry the read later.");
-    const payment = verifyPaymentReceipt(config, invoice, {
-      ...receipt,
-      status: Number(receipt.status),
-    });
+    const payment = verifyPaymentReceipt(config, invoice, receipt);
     if (invoice.status !== "paid" || payment.amountOut !== evidence.amountOut)
       throw new Error(
         "Evidence amount or current invoice state does not match the verified payment.",

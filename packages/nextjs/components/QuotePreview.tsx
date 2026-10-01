@@ -86,6 +86,7 @@ export function QuotePreview({
           }}
         >
           <option value="mainnet-usdc">USDC · Mainnet (read only)</option>
+          <option value="testnet-usdc">USDC · Testnet</option>
           <option value="testnet-sauce">SAUCE · Testnet</option>
           <option value="mainnet-sauce">SAUCE · Mainnet (read only)</option>
         </select>
@@ -136,9 +137,9 @@ export function QuotePreview({
       <p className="quote-footnote">
         {asset.network} · Token {asset.tokenId} · Direct WHBAR → {asset.symbol}{" "}
         pool.
-        {preset === "mainnet-usdc"
-          ? " USDC settlement is not enabled; this demonstrates live conversion pricing."
-          : " Token amounts are not US dollar amounts."}
+        {asset.network === "mainnet"
+          ? " Mainnet is a live, read-only price; invoices settle on testnet."
+          : " Testnet pool prices are not market prices."}
       </p>
     </section>
   );

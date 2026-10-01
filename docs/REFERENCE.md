@@ -13,11 +13,12 @@ The quote demo starts with no env files. Copy the example files only when enabli
 | `HEDERA_PRIVATE_KEY`       | Hardhat / `packages/hardhat/.env`             | Unset                           | Funded testnet ECDSA key, 32 bytes with `0x` prefix; never send to the frontend |
 | `HEDERA_PAYER_PRIVATE_KEY` | Payment smoke / same file                     | Unset                           | Optional separately funded ECDSA payer; otherwise uses the merchant key         |
 | `HEDERA_RPC_URL`           | Hardhat / same file                           | `https://testnet.hashio.io/api` | Deployment and smoke RPC; must report chain 296                                 |
-| `HEDERA_TOKEN_ID`          | Hardhat / same file                           | `0.0.1183558`                   | Token chosen when deploying the immutable contract                              |
+| `HEDERA_TOKEN_ID`          | Hardhat / same file                           | `0.0.5449`                      | Token chosen when deploying the immutable contract                              |
 | `MAX_TESTNET_HBAR`         | Payment smoke / same file                     | `1`                             | Maximum conversion spend for the one-token smoke; excludes all network fees     |
 | `HEDERA_NETWORK`           | Next.js server / `packages/nextjs/.env.local` | `testnet`                       | Active invoice network; `mainnet` is read-only in the reference UI              |
 | `HEDERA_TOKEN_ID`          | Next.js server / same file                    | Network default below           | Active settlement token; must match the deployed contract                       |
 | `HEDERA_CHECKOUT_ADDRESS`  | Next.js server / same file                    | Unset                           | Actual deployed EVM contract address; absence disables invoice creation         |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Next.js browser / same file       | Unset                           | Public WalletConnect project ID ([cloud.reown.com](https://cloud.reown.com)), not a secret; required for HashPack, not MetaMask; set it on Vercel too |
 | `SMOKE_ORIGIN`             | Smoke process environment                     | `http://localhost:3000`         | Public or local origin to test, without trailing slash                          |
 
 Restart Next.js after editing its env file. On Vercel, set these server variables in project settings and redeploy. Hardhat's env file is not loaded by Next.js; `HEDERA_RPC_URL` does **not** override the frontend server's RPC. To customize that RPC, modify `networkConfig` or pass an explicit `CheckoutConfig` in your own integration.
@@ -33,7 +34,7 @@ For `/api/config` and `/api/quote`, a `network` query can select the preview net
 | Mirror API             | `https://testnet.mirrornode.hedera.com/api/v1` | `https://mainnet.mirrornode.hedera.com/api/v1` |
 | SaucerSwap V1 RouterV3 | `0.0.19264`                                    | `0.0.3045981`                                  |
 | WHBAR **token**        | `0.0.15058`                                    | `0.0.1456986`                                  |
-| Default SAUCE token    | `0.0.1183558`                                  | `0.0.731861`                                   |
+| Default USDC token     | `0.0.5449`                                     | `0.0.456858`                                   |
 | Reference signing      | Enabled after deployment                       | Disabled                                       |
 
 The route uses the WHBAR token, not its wrapper contract. Protocol source: [SaucerSwap contract deployments](https://docs.saucerswap.finance/developers/contracts). The implementation's current constants are in [networkConfig](../packages/checkout/src/index.ts).
@@ -119,7 +120,8 @@ Expect HTTP 400 and `INVALID_NETWORK`. `PENDING_RECEIPT` means retry the **read*
 | `quotePayment(config, { amount?, invoiceId?, slippageBps })` | Preview or verified invoice quote                                                              |
 | `paymentTransaction(config, quote)`                          | Build testnet transaction; reject preview/stale/inconsistent quotes; convert native value once |
 | `bufferedGasLimit(estimate)`                                 | Double a positive Hedera gas estimate before submitting a wallet write                         |
-| `verifyPaymentReceipt(config, invoice, receipt)`             | Check successful receipt destination, event emitter and matching invoice/merchant/amount       |
+| `readTransactionReceipt(config, reference)`                  | Read a receipt by EVM hash or Hedera transaction ID; `null` while not indexed                  |
+| `verifyPaymentReceipt(config, invoice, receipt)`             | Check successful receipt (with `transactionHash`), destination, event emitter and matching invoice/merchant/amount |
 | `tokenUnits(decimalString, decimals)`                        | Parse a positive token amount without floating-point arithmetic                                |
 | `maximumSpend(tinybar, bps)`                                 | Calculate the rounded-up conversion cap                                                        |
 | `hbarDisplay(tinybar)` / `tinybarToRpcWei(tinybar)`          | Format HBAR / convert only at the RPC boundary                                                 |

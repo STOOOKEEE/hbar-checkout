@@ -15,10 +15,10 @@ A [Scaffold-HBAR](https://docs.hedera.com/solutions/tools/scaffold-hbar/index) t
 | Open the hosted app and request real testnet/mainnet quotes | Yes — no installation or wallet                                                                                                           |
 | Install, run tests, build and explore the source            | Yes — no key required                                                                                                                     |
 | Create, cancel and pay invoices on testnet                  | Live checkout deployed; writes require a funded EVM wallet                                                                                |
-| Inspect a published SaucerPay payment transaction           | [Verified two-wallet payment on the Hedera Mirror Node](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1) |
+| Inspect a published SaucerPay payment transaction           | [Verified two-wallet USDC payment on the Hedera Mirror Node](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) |
 | Pay invoices on mainnet                                     | Not enabled in this template                                                                                                              |
 
-The example receives **SAUCE**, not dollars. It is a convenient testnet asset, not a stablecoin. The USDC preview reads real mainnet liquidity; USDC settlement is still an adaptation requiring deployment and payment validation. [Validation record](docs/VALIDATION.md).
+The example settles in **testnet USDC** (`0.0.5449`, a testnet token with a SaucerSwap V1 pool, not Circle's testnet issuance). Testnet pool prices are not market prices. The mainnet USDC preview reads real mainnet liquidity and is read-only. [Validation record](docs/VALIDATION.md).
 
 ## Who should start here?
 
@@ -41,7 +41,7 @@ cd your-project
 npm run dev
 ```
 
-Open **http://localhost:3000**. In the quote panel, choose **SAUCE · Testnet**, enter `1` and click **Get live quote**. You should see the HBAR needed for 1 SAUCE, a maximum spend and a timestamp. Prices change; a failed network call displays an error, never a sample price.
+Open **http://localhost:3000**. In the quote panel, choose **USDC · Testnet**, enter `1` and click **Get live quote**. You should see the HBAR needed for 1 USDC, a maximum spend and a timestamp. Prices change; a failed network call displays an error, never a sample price.
 
 **Create payment link is disabled until you configure a contract. This is expected.** Continue with [the first-run walkthrough](docs/GETTING_STARTED.md) or [deploy on testnet](docs/DEPLOYMENT.md).
 
@@ -113,8 +113,8 @@ In two terminals, run `npm start` and then `npm run smoke`. Use `npm run probe` 
 
 ## Scope and license
 
-One configured fungible HTS token per deployment, without custom transfer fees, reached through a direct SaucerSwap V1 WHBAR pool. The example uses an injected EVM wallet such as MetaMask; HashPack/WalletConnect is not integrated. Invoice history in the workspace is temporary browser state. A production order database, credit ledger, subscription scheduler and fulfillment system are application extensions.
+One configured fungible HTS token per deployment, without custom transfer fees, reached through a direct SaucerSwap V1 WHBAR pool. The UI connects either HashPack (native Hedera transactions through WalletConnect; works with ED25519 and ECDSA accounts; needs `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`) or an injected EVM wallet such as MetaMask (ECDSA accounts only). A real HashPack session has not been tested yet; see [Validation](docs/VALIDATION.md#native-hedera-transaction-path-hashpack-code--2026-10-01). Invoice history in the workspace is temporary browser state. A production order database, credit ledger, subscription scheduler and fulfillment system are application extensions.
 
-The contract is unaudited. Mainnet signing is disabled in the reference flow. A [testnet deployment and two-wallet payment](docs/VALIDATION.md#live-testnet-deployment-and-payment--2026-09-22) are verified; the contest entry has not been submitted.
+The contract is unaudited. Mainnet signing is disabled in the reference flow. A [testnet USDC deployment and two-wallet payment](docs/VALIDATION.md#live-testnet-usdc-deployment-and-payment--2026-10-01) are verified; the contest entry has not been submitted.
 
 [MIT](LICENSE). Protocol references and design decisions are linked in [Architecture](docs/ARCHITECTURE.md); the original implementation plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).

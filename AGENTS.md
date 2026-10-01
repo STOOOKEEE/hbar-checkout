@@ -38,9 +38,10 @@ The quote example is included in the checkout package's TypeScript checks. Keep 
 
 - Router, settlement token and WHBAR are immutable. Never accept arbitrary router calldata from the payer.
 - Read invoice amount and merchant from the configured on-chain invoice, never a query-string override or browser-supplied receipt.
-- Keep bigint arithmetic. Solidity `msg.value`, balance and internal HBAR sends use tinybar. RPC transaction `value` uses wei: multiply by 10^10 once at that boundary. Do not use `parseEther` for token amounts.
+- Keep bigint arithmetic. Solidity `msg.value`, balance and internal HBAR sends use tinybar. RPC transaction `value` uses wei: multiply by 10^10 once at that boundary. The native HashPack `ContractExecuteTransaction` takes tinybar directly (`rpcWeiToTinybar` rejects non-whole tinybar). Do not use `parseEther` for token amounts.
 - Enforce exact merchant token balance increase, bounded HBAR spend and surplus return in one transaction. Revert invoice state and transfers together on failure.
 - A successful receipt must target the configured checkout and contain its matching `InvoicePaid` event, with invoice ID, merchant and amount verified. A transaction hash alone is not proof.
+- Payment references may be an EVM transaction hash (EVM wallet) or a Hedera transaction ID (HashPack native path). Resolve either to the same receipt before verification; never treat the reference itself as proof.
 - Verify deployment immutables and merchant token association before the invoice payment path. These checks do not guarantee future liquidity or policies.
 - Preserve duplicate-payment rejection, expiry, merchant-only cancellation and reentrancy protection.
 - Preserve receipt recovery after refresh. After an uncertain send, check the existing transaction before retrying payment.
