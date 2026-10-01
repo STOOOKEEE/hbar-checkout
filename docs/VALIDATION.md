@@ -100,7 +100,7 @@ In an isolated worktree of commit `df6d11d` with Node v20.18.3 and npm 10.9.8, a
 
 `engines.node` was then lowered from `>=22.0.0` to `>=20.18.3` in `package.json`, `template.json` and the lockfile. `npm start -- -p 3020` fails on any Node version (`next start 3020` → "Invalid project directory"); use `PORT`. Keep vitest 3: vitest 4 requires Node ^22.12. The Vercel packaging script still selects the Node 22.x runtime for hosting. The later HCS and fulfill changes were re-run on Node 20 in the [fresh public scaffold](#fresh-public-scaffold--2026-10-01).
 
-## Hosted app on the USDC checkout — 2026-10-01, updated 2026-10-02
+## Hosted app on the USDC checkout — 2026-10-01
 
 `https://saucerpay-hedera.vercel.app/api/config` returns testnet token `0.0.5449`, checkout `0x140e27Cf63790a558d66C8796A67984d5164055E` and topic `0.0.10814952`. The public `/api/invoices/0x08c3…7791?tx=0xbc33…3dd8` returns status `paid`, `amountOut` `1000000`, `spentTinybar` `43988881` and the HCS label `Logo design – SaucerPay demo`, and the hosted smoke (`SMOKE_ORIGIN=https://saucerpay-hedera.vercel.app node scripts/smoke.mjs`) passes. On 2026-10-02 `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` was set on Vercel; in headless Chromium, clicking **HashPack** on the hosted workspace opens the WalletConnect modal listing HashPack. No real HashPack session or signature has been tested yet.
 
