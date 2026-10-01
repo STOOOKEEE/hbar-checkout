@@ -1,19 +1,24 @@
 import Link from "next/link";
+import { Glow } from "@/components/motion/Glow";
+import { Reveal } from "@/components/motion/Reveal";
 
 export default function Guide() {
   return (
     <div className="guide">
-      <p className="eyebrow">Developer guide / 01</p>
-      <h1>
-        Make checkout
-        <br />
-        part of your app.
-      </h1>
-      <p className="lead">
-        A reusable payment boundary, with an invoice workspace to show how the
-        pieces fit together.
-      </p>
-      <section className="panel">
+      <Glow className="hero-glow" />
+      <Reveal>
+        <p className="eyebrow">Developer guide / 01</p>
+        <h1>
+          Make checkout
+          <br />
+          <span className="gradient-text">part of your app.</span>
+        </h1>
+        <p className="lead">
+          A reusable payment boundary, with an invoice workspace to show how the
+          pieces fit together.
+        </p>
+      </Reveal>
+      <Reveal as="section" className="panel">
         <h2>Start with a live quote</h2>
         <p>
           The workspace reads SaucerSwap prices without a wallet or API key. An
@@ -24,8 +29,8 @@ export default function Guide() {
           Use Node.js 20.18.3 or later. Select Next.js, Hardhat and npm if
           prompted.
         </p>
-      </section>
-      <section className="panel">
+      </Reveal>
+      <Reveal as="section" className="panel">
         <h2>Enable testnet invoices</h2>
         <ol>
           <li>
@@ -47,8 +52,8 @@ export default function Guide() {
           </li>
           <li>
             Optional: run <code>npm run hardhat:topic</code> and set{" "}
-            <code>HEDERA_TOPIC_ID</code> to enable merchant labels on the
-            Hedera Consensus Service.
+            <code>HEDERA_TOPIC_ID</code> to enable merchant labels on the Hedera
+            Consensus Service.
           </li>
           <li>
             Connect the merchant wallet, associate the settlement token, create
@@ -62,20 +67,19 @@ export default function Guide() {
           </a>{" "}
           for exact steps, account requirements and transaction evidence.
         </p>
-      </section>
-      <section className="panel">
+      </Reveal>
+      <Reveal as="section" className="panel">
         <h2>Replace the screen, keep the payment flow</h2>
         <pre>{`import { PayWithHbar } from '@/components/PayWithHbar';\n\n<PayWithHbar\n  invoiceId={order.invoiceId}\n  onPaid={({ reference }) =>\n    fetch(\`/api/orders/\${order.id}/fulfill\`, {\n      method: 'POST',\n      body: JSON.stringify({ invoiceId: order.invoiceId, reference }),\n    })\n  }\n/>`}</pre>
         <p>
           The contract binds the merchant and amount. The component handles the
           quote, HashPack or MetaMask signing and receipt recovery. Your server
-          fulfills the order only after{" "}
-          <code>verifyInvoicePayment</code> confirms the{" "}
-          <code>InvoicePaid</code> receipt for the invoice stored with that
-          order; <code>onPaid</code> alone is not proof.
+          fulfills the order only after <code>verifyInvoicePayment</code>{" "}
+          confirms the <code>InvoicePaid</code> receipt for the invoice stored
+          with that order; <code>onPaid</code> alone is not proof.
         </p>
-      </section>
-      <section className="panel">
+      </Reveal>
+      <Reveal as="section" className="panel">
         <h2>Try a concrete integration</h2>
         <p>
           The{" "}
@@ -99,8 +103,8 @@ export default function Guide() {
             Troubleshooting
           </a>
         </p>
-      </section>
-      <section className="panel">
+      </Reveal>
+      <Reveal as="section" className="panel">
         <h2>Know the boundary</h2>
         <p>
           The starter supports HBAR input and one fee-free HTS token through a
@@ -110,8 +114,8 @@ export default function Guide() {
           unaudited template code, and local mocks do not validate Hedera
           precompiles.
         </p>
-      </section>
-      <Link className="button primary" href="/">
+      </Reveal>
+      <Link className="button primary" href="/workspace">
         Open the workspace →
       </Link>
     </div>

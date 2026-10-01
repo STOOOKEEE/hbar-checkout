@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Glow } from "@/components/motion/Glow";
+import { Reveal } from "@/components/motion/Reveal";
 import { QuotePreview } from "@/components/QuotePreview";
 
 const examples = {
@@ -50,15 +52,18 @@ export default function Examples() {
   const example = examples[selected];
   return (
     <div className="workspace examples-page">
-      <p className="eyebrow">Build with HBAR Checkout</p>
-      <h1>
-        Start with a<br />
-        <span>real payment need.</span>
-      </h1>
-      <p className="lead">
-        Two product examples use the same quote component and payment
-        integration.
-      </p>
+      <Glow className="hero-glow" />
+      <Reveal>
+        <p className="eyebrow">Build with HBAR Checkout</p>
+        <h1>
+          Start with a<br />
+          <span className="gradient-text">real payment need.</span>
+        </h1>
+        <p className="lead">
+          Two product examples use the same quote component and payment
+          integration.
+        </p>
+      </Reveal>
       <div className="example-options" role="group" aria-label="Use case">
         {(Object.keys(examples) as (keyof typeof examples)[]).map((key) => (
           <button
@@ -72,7 +77,7 @@ export default function Examples() {
         ))}
       </div>
       <div className="workspace-grid">
-        <section className="panel">
+        <Reveal as="section" className="panel" delay={80}>
           <p className="eyebrow">{example.label}</p>
           <h2>{example.title}</h2>
           <p>{example.description}</p>
@@ -100,19 +105,21 @@ export default function Examples() {
           >
             Read the integration recipe ↗
           </a>
-        </section>
-        <QuotePreview key={selected} initialAmount={example.amount} />
+        </Reveal>
+        <Reveal delay={160}>
+          <QuotePreview key={selected} initialAmount={example.amount} />
+        </Reveal>
       </div>
       <section className="benefits">
-        <div>
+        <Reveal>
           <span>PROTOCOL CAPABILITY</span>
           <h3>Existing liquidity.</h3>
           <p>
             SaucerSwap converts HBAR to the requested token. A standalone
             invoice contract does not supply that liquidity.
           </p>
-        </div>
-        <div>
+        </Reveal>
+        <Reveal delay={100}>
           <span>TEMPLATE CAPABILITY</span>
           <h3>Exact settlement.</h3>
           <p>
@@ -120,15 +127,15 @@ export default function Examples() {
             returns surplus. Removing the swap breaks HBAR-funded token
             settlement.
           </p>
-        </div>
-        <div>
+        </Reveal>
+        <Reveal delay={200}>
           <span>YOUR APPLICATION</span>
           <h3>Your order and delivery.</h3>
           <p>
             Keep your catalog, customer identity and fulfillment rules. Verify
             the receipt on the server before granting access.
           </p>
-        </div>
+        </Reveal>
       </section>
       <Link href="/guide" className="button primary">
         Build your checkout →

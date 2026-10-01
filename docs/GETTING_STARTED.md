@@ -35,13 +35,13 @@ npm run dev
 
 Do not run `npm ci` concurrently with the generator. If its installation failed, resolve the reported error and run `npm ci` from the generated project root.
 
-Expected terminal result: Next.js reports it is ready and prints a local address. Open http://localhost:3000, or the alternate port printed if 3000 is already occupied. No `.env` is required.
+Expected terminal result: Next.js reports it is ready and prints a local address. Open http://localhost:3000/workspace, or `/workspace` on the alternate port printed if 3000 is already occupied. The root `/` is the landing page; the merchant workspace lives at `/workspace`. No `.env` is required.
 
 The generator consumes `template.json`; its absence in the generated app is expected. It remains present in the source repository.
 
 ## 3. Get a real price
 
-In the **quote panel** (separate from the merchant invoice form):
+In the **quote panel** on `/workspace` (separate from the merchant invoice form; `/examples` has the same panel):
 
 1. Set **Quote asset** to **USDC · Testnet**.
 2. Enter `1` in **Requested token amount**.
@@ -88,7 +88,7 @@ In another terminal at the project root:
 npm run smoke        # or SMOKE_ORIGIN=http://localhost:3020 npm run smoke
 ```
 
-Expected: lint and types pass, the TypeScript and 11 contract tests pass, the build completes, and smoke prints `OK` lines for the homepage, guide, examples and invoice pages, the invalid-network error, the preview allowlist and the example fulfill endpoint. The error checks intentionally send invalid requests and expect HTTP 400/404. Use `PORT=…` to change the port: `npm start -- -p 3020` is turned into `next start 3020` by the workspace wrapper and fails.
+Expected: lint and types pass, the TypeScript and 11 contract tests pass, the build completes, and smoke prints `OK` lines for the landing page (`/`), workspace (`/workspace`), guide, examples and invoice pages, the invalid-network error, the preview allowlist and the example fulfill endpoint. The error checks intentionally send invalid requests and expect HTTP 400/404. Use `PORT=…` to change the port: `npm start -- -p 3020` is turned into `next start 3020` by the workspace wrapper and fails.
 
 `npm run probe` separately reads both live networks. Read its per-network results: the command only exits with failure if both probes fail. A zero exit code does not prove both networks are healthy.
 

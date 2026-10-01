@@ -82,7 +82,7 @@ cd your-project
 npm run dev
 ```
 
-Choose Next.js, Hardhat and npm. Open http://localhost:3000, choose **USDC · Testnet** in the quote panel, enter `1` and click **Get live quote**. A failed network call shows an error, never a sample price. **Create payment link** stays disabled until you [deploy your checkout](docs/DEPLOYMENT.md); that is expected.
+Choose Next.js, Hardhat and npm. Open http://localhost:3000/workspace, choose **USDC · Testnet** in the quote panel, enter `1` and click **Get live quote**. A failed network call shows an error, never a sample price. **Create payment link** stays disabled until you [deploy your checkout](docs/DEPLOYMENT.md); that is expected.
 
 Direct clone instead: `git clone https://github.com/STOOOKEEE/hbar-checkout.git && cd hbar-checkout && npm ci && npm run dev`.
 

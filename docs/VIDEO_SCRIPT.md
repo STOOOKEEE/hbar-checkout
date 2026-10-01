@@ -6,7 +6,7 @@
 
 ## Before recording
 
-- Hosted app: https://hbar-checkout.vercel.app (testnet USDC `0.0.5449`, checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`, HCS topic `0.0.10814952`).
+- Hosted app: https://hbar-checkout.vercel.app (landing page; merchant workspace at https://hbar-checkout.vercel.app/workspace; testnet USDC `0.0.5449`, checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`, HCS topic `0.0.10814952`).
 - **Scene 4 has two versions.** Record version A only after a real HashPack payment works on the hosted app (needs `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` on Vercel and a HashPack testnet account holding about 1 HBAR). Otherwise use version B, which shows only recorded evidence. Never present a wallet click as the origin of a transaction it did not produce.
 - Two browser profiles help: one HashPack account as merchant, another as payer. Keep seed phrases, private keys and personal tabs out of frame.
 - Record at 1920×1080, 30 fps, browser zoom 125–150 % so amounts are readable.
@@ -15,7 +15,7 @@
 
 ### 00:00–00:15 — Hook
 
-**Screen:** your face or the hosted workspace with the title `HBAR Checkout · Scaffold-HBAR template`. Caption: `Price in USDC. Get paid from HBAR.`
+**Screen:** open on the hosted landing page (`/`) and scroll slowly: hero → `Exact amount / Any HBAR wallet` → **How it works**. Then cut to your face or the hosted workspace (`/workspace`) with the title `HBAR Checkout · Scaffold-HBAR template`. Caption: `Price in USDC. Get paid from HBAR.`
 
 **Voiceover:** “Your Hedera users hold H-bar. Your business prices in USDC. HBAR Checkout is a Scaffold-HBAR template that closes that gap: the customer pays in H-bar, and the merchant receives the exact USDC amount, in one transaction.”
 
@@ -27,7 +27,7 @@
 
 ### 00:40–01:05 — Merchant creates an invoice (HCS label)
 
-**Screen:** workspace → **HashPack** → approve in HashPack → amount `1`, label `Logo design`, **Create payment link** → approve both prompts → the invoice row appears with its label. Briefly open the topic on HashScan: https://hashscan.io/testnet/topic/0.0.10814952. If HashPack is not set up, show the existing paid invoice's label and the HashScan topic instead and skip the clicks.
+**Screen:** `/workspace` → **HashPack** → approve in HashPack → amount `1`, label `Logo design`, **Create payment link** → approve both prompts → the invoice row appears with its label. Briefly open the topic on HashScan: https://hashscan.io/testnet/topic/0.0.10814952. If HashPack is not set up, show the existing paid invoice's label and the HashScan topic instead and skip the clicks.
 
 **Voiceover:** “The merchant connects HashPack, signing native Hedera transactions, so ED25519 accounts work too. The invoice terms, merchant, amount and expiry are fixed in the smart contract. The description goes to a Hedera Consensus Service topic. Anyone can write to that topic, but the app only shows a label submitted by the invoice's own merchant account. We tested this live: a fake label from another account was ignored.”
 

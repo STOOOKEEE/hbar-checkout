@@ -19,6 +19,8 @@ Use Node.js 20.18.3+ and npm workspaces. Install with `npm ci` at the repository
 | -------------------------------------- | ------------------------------------------------------------- |
 | Change merchant UI                     | `packages/nextjs/components/Workspace.tsx`                    |
 | Change payer UI or recovery            | `packages/nextjs/components/PayWithHbar.tsx` (`Payment.tsx` is only the `/pay` page shell) |
+| Change landing page                    | `packages/nextjs/app/page.tsx`, `packages/nextjs/components/landing/` |
+| Change theme or animations             | `packages/nextjs/app/theme.css`, `packages/nextjs/components/motion/` (respect `prefers-reduced-motion`) |
 | Change wallet connection               | `packages/nextjs/lib/wallet.ts`                               |
 | Change server env handling             | `packages/nextjs/lib/server.ts`                               |
 | Change amounts, quote or receipt logic | `packages/checkout/src/index.ts`                              |

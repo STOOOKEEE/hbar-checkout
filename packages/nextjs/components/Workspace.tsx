@@ -24,6 +24,8 @@ import {
   type WalletKind,
 } from "@/lib/wallet";
 import { QuotePreview } from "@/components/QuotePreview";
+import { Glow } from "@/components/motion/Glow";
+import { Reveal } from "@/components/motion/Reveal";
 
 type Settings = { config: CheckoutConfig; token: TokenInfo };
 type Created = {
@@ -87,7 +89,11 @@ export function Workspace() {
     const code = BigInt(
       String(
         await rpc(settings.config, "eth_call", [
-          { from: connected.address, to: settings.config.token, data: "0x0a754de6" },
+          {
+            from: connected.address,
+            to: settings.config.token,
+            data: "0x0a754de6",
+          },
           "latest",
         ]),
       ),
@@ -213,7 +219,8 @@ export function Workspace() {
 
   return (
     <div className="workspace">
-      <div className="page-heading">
+      <Glow className="hero-glow" />
+      <Reveal className="page-heading">
         <div>
           <p className="eyebrow">
             <span className="live-dot" /> Payments, without the token mismatch
@@ -221,7 +228,7 @@ export function Workspace() {
           <h1>
             Your invoice.
             <br />
-            <span>Their HBAR.</span>
+            <span className="gradient-text">Their HBAR.</span>
           </h1>
           <p className="lead">
             Request an exact token amount. Let your customer pay in HBAR.
@@ -238,8 +245,8 @@ export function Workspace() {
             Return the difference.
           </p>
         </div>
-      </div>
-      <div className="flow-strip">
+      </Reveal>
+      <Reveal className="flow-strip" delay={80}>
         <span>
           <b>01</b> Create an invoice
         </span>
@@ -252,9 +259,9 @@ export function Workspace() {
           <b>03</b> Receive exact tokens
         </span>
         <span className="network-pill">Hedera testnet</span>
-      </div>
+      </Reveal>
       <div className="workspace-grid">
-        <section className="panel invoice-panel">
+        <Reveal as="section" className="panel invoice-panel" delay={140}>
           <div className="section-heading">
             <div>
               <p className="eyebrow">Merchant workspace</p>
@@ -415,20 +422,22 @@ export function Workspace() {
               {notice}
             </div>
           )}
-        </section>
+        </Reveal>
         <aside className="preview-column">
-          <QuotePreview />
-          <div className="template-note">
-            <span className="code-icon">{"</>"}</span>
-            <div>
-              <strong>Built to be your starting point.</strong>
-              <p>Keep the payment module. Make the experience yours.</p>
-              <Link href="/guide">Explore the integration guide →</Link>
+          <Reveal delay={220}>
+            <QuotePreview />
+            <div className="template-note">
+              <span className="code-icon">{"</>"}</span>
+              <div>
+                <strong>Built to be your starting point.</strong>
+                <p>Keep the payment module. Make the experience yours.</p>
+                <Link href="/guide">Explore the integration guide →</Link>
+              </div>
             </div>
-          </div>
+          </Reveal>
         </aside>
       </div>
-      <section className="activity">
+      <Reveal as="section" className="activity">
         <div className="section-heading">
           <h2>Your invoices</h2>
           <span className="muted">{created.length} listed</span>
@@ -484,32 +493,32 @@ export function Workspace() {
             </div>
           </div>
         )}
-      </section>
+      </Reveal>
       <section className="benefits">
-        <div>
+        <Reveal>
           <span>01 / EXACT DELIVERY</span>
           <h3>The amount you asked for.</h3>
           <p>
             The contract checks the merchant’s token balance increase before
             recording payment.
           </p>
-        </div>
-        <div>
+        </Reveal>
+        <Reveal delay={100}>
           <span>02 / BOUNDED SPEND</span>
           <h3>A ceiling, not a guess.</h3>
           <p>
             The payer sets a maximum HBAR spend. Unused HBAR is returned in the
             same transaction.
           </p>
-        </div>
-        <div>
+        </Reveal>
+        <Reveal delay={200}>
           <span>03 / VERIFIABLE RECEIPT</span>
           <h3>One invoice. One settlement.</h3>
           <p>
             A successful contract event ties the payment to the invoice, payer
             and merchant.
           </p>
-        </div>
+        </Reveal>
       </section>
     </div>
   );
