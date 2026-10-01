@@ -8,7 +8,7 @@ For a ready-to-adapt pitch, timed demo and evidence preflight, use [Submission p
 
 ## 1. Try the integration without setup
 
-Open [the live workspace](https://hbar-checkout.vercel.app/workspace), enter `1` in the quote panel and request testnet and mainnet USDC quotes using the quote-asset selector. They read SaucerSwap; no fabricated price is substituted for a failed request. Then open the [paid USDC invoice](https://hbar-checkout.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8): the server re-verifies the real two-wallet receipt without a wallet. HashPack is not enabled on the hosted app (no WalletConnect project ID configured there).
+Open [the live workspace](https://hbar-checkout.vercel.app), enter `1` in the quote panel and request testnet and mainnet USDC quotes using the quote-asset selector. They read SaucerSwap; no fabricated price is substituted for a failed request. Then open the [paid USDC invoice](https://hbar-checkout.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8): the server re-verifies the real two-wallet receipt without a wallet. HashPack is not enabled on the hosted app (no WalletConnect project ID configured there).
 
 ## 2. Generate and run a clean copy
 
@@ -18,7 +18,7 @@ Follow [Getting started](GETTING_STARTED.md) from an empty parent folder. The su
 npx create-scaffold-hbar@latest --template STOOOKEEE/hbar-checkout
 ```
 
-Then run lint, tests, build, start and smoke as documented. [Validation](VALIDATION.md#fresh-public-scaffold--2026-10-02) records a fresh generator/install/lint/test/build/boot/smoke pass for public source commit `56a6d0e` (`STOOOKEEE/hbar-checkout`, frontend redesign with the landing page at `/` and the workspace at `/workspace`) on Node 22.23.2 and Node 20.18.3.
+Then run lint, tests, build, start and smoke as documented. [Validation](VALIDATION.md#fresh-public-scaffold--2026-10-02) records a fresh generator/install/lint/test/build/boot/smoke pass for public source commit `56a6d0e` (`STOOOKEEE/hbar-checkout`, an earlier frontend revision) on Node 22.23.2 and Node 20.18.3.
 
 ## 3. Inspect what is reusable
 

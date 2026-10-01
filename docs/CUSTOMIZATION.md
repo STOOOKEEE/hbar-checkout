@@ -14,7 +14,7 @@ The integration has three seams:
 
 1. Change the headline/product copy in [Workspace.tsx](../packages/nextjs/components/Workspace.tsx).
 2. Keep the quote call and payment route unchanged.
-3. Run `npm run lint`, `npm run build`, then open `/workspace` and request a quote.
+3. Run `npm run lint`, `npm run build`, then open `/` and request a quote.
 
 This confirms that your product screen can use the existing payment integration before you change contract behavior.
 

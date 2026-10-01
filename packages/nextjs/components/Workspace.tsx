@@ -24,8 +24,6 @@ import {
   type WalletKind,
 } from "@/lib/wallet";
 import { QuotePreview } from "@/components/QuotePreview";
-import { Glow } from "@/components/motion/Glow";
-import { Reveal } from "@/components/motion/Reveal";
 
 type Settings = { config: CheckoutConfig; token: TokenInfo };
 type Created = {
@@ -219,8 +217,7 @@ export function Workspace() {
 
   return (
     <div className="workspace">
-      <Glow className="hero-glow" />
-      <Reveal className="page-heading">
+      <div className="page-heading">
         <div>
           <p className="eyebrow">
             <span className="live-dot" /> Payments, without the token mismatch
@@ -228,7 +225,7 @@ export function Workspace() {
           <h1>
             Your invoice.
             <br />
-            <span className="gradient-text">Their HBAR.</span>
+            Their HBAR.
           </h1>
           <p className="lead">
             Request an exact token amount. Let your customer pay in HBAR.
@@ -245,8 +242,8 @@ export function Workspace() {
             Return the difference.
           </p>
         </div>
-      </Reveal>
-      <Reveal className="flow-strip" delay={80}>
+      </div>
+      <div className="flow-strip">
         <span>
           <b>01</b> Create an invoice
         </span>
@@ -259,9 +256,9 @@ export function Workspace() {
           <b>03</b> Receive exact tokens
         </span>
         <span className="network-pill">Hedera testnet</span>
-      </Reveal>
+      </div>
       <div className="workspace-grid">
-        <Reveal as="section" className="panel invoice-panel" delay={140}>
+        <section className="panel invoice-panel">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Merchant workspace</p>
@@ -422,22 +419,20 @@ export function Workspace() {
               {notice}
             </div>
           )}
-        </Reveal>
+        </section>
         <aside className="preview-column">
-          <Reveal delay={220}>
-            <QuotePreview />
-            <div className="template-note">
-              <span className="code-icon">{"</>"}</span>
-              <div>
-                <strong>Built to be your starting point.</strong>
-                <p>Keep the payment module. Make the experience yours.</p>
-                <Link href="/guide">Explore the integration guide →</Link>
-              </div>
+          <QuotePreview />
+          <div className="template-note">
+            <span className="code-icon">{"</>"}</span>
+            <div>
+              <strong>Built to be your starting point.</strong>
+              <p>Keep the payment module. Make the experience yours.</p>
+              <Link href="/guide">Explore the integration guide →</Link>
             </div>
-          </Reveal>
+          </div>
         </aside>
       </div>
-      <Reveal as="section" className="activity">
+      <section className="activity">
         <div className="section-heading">
           <h2>Your invoices</h2>
           <span className="muted">{created.length} listed</span>
@@ -493,32 +488,32 @@ export function Workspace() {
             </div>
           </div>
         )}
-      </Reveal>
+      </section>
       <section className="benefits">
-        <Reveal>
+        <div>
           <span>01 / EXACT DELIVERY</span>
           <h3>The amount you asked for.</h3>
           <p>
             The contract checks the merchant’s token balance increase before
             recording payment.
           </p>
-        </Reveal>
-        <Reveal delay={100}>
+        </div>
+        <div>
           <span>02 / BOUNDED SPEND</span>
           <h3>A ceiling, not a guess.</h3>
           <p>
             The payer sets a maximum HBAR spend. Unused HBAR is returned in the
             same transaction.
           </p>
-        </Reveal>
-        <Reveal delay={200}>
+        </div>
+        <div>
           <span>03 / VERIFIABLE RECEIPT</span>
           <h3>One invoice. One settlement.</h3>
           <p>
             A successful contract event ties the payment to the invoice, payer
             and merchant.
           </p>
-        </Reveal>
+        </div>
       </section>
     </div>
   );

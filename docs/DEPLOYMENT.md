@@ -95,13 +95,13 @@ Run/restart `npm run dev`. Environment changes require restarting the Next.js pr
 
 For your hosted Vercel copy, set the same server variables and `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` in project settings and redeploy. The topic and project IDs are public, not secrets; without the project ID HashPack is unavailable but MetaMask still works. Never add the Hardhat key to Vercel. See [web hosting](HOSTING.md).
 
-In the workspace at `/workspace` (for example http://localhost:3000/workspace), choose **HashPack** (default) or **MetaMask**; the payment page has a **Wallet** selector. HashPack connects through its browser extension if detected, otherwise a WalletConnect QR code for mobile, and signs native Hedera transactions (ED25519 or ECDSA accounts). MetaMask needs a funded testnet ECDSA account; its Connect button requests Hedera testnet (chain 296 / `0x128`) and offers the canonical testnet RPC if the wallet does not know it. For a realistic demo, use separate merchant and payer wallets or browser profiles.
+In the workspace at `/` (for example http://localhost:3000), choose **HashPack** (default) or **MetaMask**; the payment page has a **Wallet** selector. HashPack connects through its browser extension if detected, otherwise a WalletConnect QR code for mobile, and signs native Hedera transactions (ED25519 or ECDSA accounts). MetaMask needs a funded testnet ECDSA account; its Connect button requests Hedera testnet (chain 296 / `0x128`) and offers the canonical testnet RPC if the wallet does not know it. For a realistic demo, use separate merchant and payer wallets or browser profiles.
 
 **Checkpoint:** `/api/config` returns your checkout address and the intended token. The quote-panel network selector is only a preview selector; it does not change the deployed contract.
 
 ## 5. Merchant and payer flow
 
-1. On `/workspace`, connect the merchant wallet. Click **Associate the settlement token**. Association is a Hedera token operation signed by that account, not an ERC20 spending approval.
+1. On `/`, connect the merchant wallet. Click **Associate the settlement token**. Association is a Hedera token operation signed by that account, not an ERC20 spending approval.
 2. Allow mirror-node indexing to catch up. Create a small invoice, such as `1 USDC`. The merchant signs invoice creation. With a topic and HashPack, fill in **Label (shown to the payer)**: HashPack asks for a second approval to publish it on HCS. MetaMask cannot sign HCS messages, so leave the label empty when using it; the workspace checks this before creating the invoice.
 3. Open the payment page and copy its URL. **Your invoices** lists invoices created in this browser session; with a topic, **Load my invoices** rebuilds the connected merchant's recent labelled invoices from HCS, newest first (labels appear about 5–10 s after consensus).
 4. Open the link using the payer wallet. Request a quote, review maximum HBAR spend plus additional network fees, then pay.

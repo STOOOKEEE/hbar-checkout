@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 const origin = process.env.SMOKE_ORIGIN || "http://localhost:3000";
-for (const route of [
-  "/",
-  "/workspace",
-  "/guide",
-  "/examples",
-  "/pay/0x" + "ab".repeat(32),
-]) {
+for (const route of ["/", "/guide", "/examples", "/pay/0x" + "ab".repeat(32)]) {
   const response = await fetch(origin + route);
   assert.equal(
     response.redirected,
