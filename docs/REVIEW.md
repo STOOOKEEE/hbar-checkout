@@ -18,7 +18,7 @@ Follow [Getting started](GETTING_STARTED.md) from an empty parent folder. The su
 npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate
 ```
 
-Then run lint, tests, build, start and smoke as documented. [Validation](VALIDATION.md#fresh-public-scaffold--2026-09-22) records a fresh generator/install/test/build/boot pass for public source commit `57483b8`. The HCS log, drop-in component, fulfill endpoint, +25 % gas rule and Node 20.18.3 support came later and have not been through a fresh-scaffold run yet.
+Then run lint, tests, build, start and smoke as documented. [Validation](VALIDATION.md#fresh-public-scaffold--2026-10-01) records a fresh generator/install/lint/test/build/boot/smoke pass for public source commit `342fdc7` on Node 22.23.2 and Node 20.18.3, covering the HCS log, drop-in component, fulfill endpoint and +25 % gas rule.
 
 ## 3. Inspect what is reusable
 

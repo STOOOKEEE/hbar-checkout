@@ -4,6 +4,36 @@
 
 This file separates local checks, real protocol reads and actual transactions. Passing the first two does not imply a live payment succeeded. Newest records first; older records keep their original source revisions.
 
+## Fresh public scaffold — 2026-10-01
+
+Public source commit [`342fdc7`](https://github.com/STOOOKEEE/hedera-temlate/commit/342fdc71463946854bac43cb34c9eb5dba5192bc) (HCS log, `PayWithHbar`, fulfill endpoint, +25 % gas rule, Node 20.18.3 floor) was generated twice with `create-scaffold-hbar@0.4.1`, each time in a new empty `/tmp` directory with no env files, no keys and no local template override. Only a throwaway Git identity was supplied, through a temporary `GIT_CONFIG_GLOBAL` file:
+
+```bash
+npm create scaffold-hbar@latest -- --template STOOOKEEE/hedera-temlate --destination app \
+  --frontend nextjs-app --solidity-framework hardhat --network testnet \
+  --package-manager npm --skip-hedera-skills --ci
+cd app && npm ci && npm run lint && npm test && npm run build
+PORT=3040 npm start &
+SMOKE_ORIGIN=http://localhost:3040 node scripts/smoke.mjs
+curl http://localhost:3040/api/config
+curl "http://localhost:3040/api/preview?preset=testnet-usdc&amount=1&slippageBps=50"
+```
+
+The generated tree contains `components/PayWithHbar.tsx` and `checkout/src/hcs.ts`. It matches `342fdc7` once the CLI's own changes are discounted: Prettier formatting, `npm X` → `npm run X` prose, `packageManager` fields, consumed `template.json`.
+
+| Step                              | Node 22.23.2 / npm 10.9.8        | Node 20.18.3 / npm 10.9.8                                                                    |
+| --------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| Generation (CLI installs and commits) | Pass                         | Pass                                                                                         |
+| `npm ci`                          | Pass, 741 packages               | Pass, 740 packages; non-blocking `EBADENGINE` warnings (vite 7, chokidar/readdirp 5, `@wallet-standard/base`) |
+| `npm run lint` (ESLint + both typechecks) | Pass                     | Pass                                                                                         |
+| `npm test`                        | Pass: 38 TypeScript, 11 contract | Pass: 38 TypeScript, 11 contract                                                             |
+| `npm run build`                   | Pass                             | Pass                                                                                         |
+| `PORT=3040 npm start` + smoke     | Pass: `/`, `/guide`, `/examples`, `/pay/<id>`, invalid network, preview limits, fulfill rejections | Pass, same OK lines                         |
+| `/api/config`                     | HTTP 200, testnet, token `0.0.5449`, `checkout: null` (no env) | Same                                           |
+| `/api/preview?preset=testnet-usdc&amount=1&slippageBps=50` | HTTP 200, live quote: `amountOut` `1000000`, `quotedTinybar` `44054615`, `maximumTinybar` `44274889` | Same values |
+
+A first run against `dee0b98` failed at `npm run build`: Turbopack could not resolve `@reown/appkit*`, `@reown/walletkit`, `@walletconnect/*` or `@hiero-ledger/proto` from `@hashgraph/hedera-wallet-connect`. Lint and tests had passed. Root cause: the CLI installs with `npm install --legacy-peer-deps`, which rewrites the lockfile without peer dependencies, and the wallet library declares those packages only as peers. `342fdc7` declares them, plus `protobufjs` (peer of `@hiero-ledger/proto`), as exact direct dependencies of `packages/nextjs`. The versions are the ones already locked, so resolution is unchanged. A local copy installed with `npm install --legacy-peer-deps` then also built.
+
 ## HCS invoice log — 2026-10-01
 
 Topic [`0.0.10814952`](https://hashscan.io/testnet/topic/0.0.10814952) was created by `npm run hardhat:topic` in transaction `0.0.10669846@1790888761.650379281`: memo `saucerpay:0x140e27Cf63790a558d66C8796A67984d5164055E`, admin key = deployer `0.0.10669846`, no submit key (public).
@@ -68,7 +98,7 @@ In an isolated worktree of commit `df6d11d` with Node v20.18.3 and npm 10.9.8, a
 | `PORT=3020 npm start` + `SMOKE_ORIGIN=http://localhost:3020 node scripts/smoke.mjs` | Pass, all OK lines                                               |
 | `/api/config`, `/api/preview?preset=testnet-usdc`, `/api/quote?network=testnet&amount=1` | HTTP 200 with live testnet quotes                            |
 
-`engines.node` was then lowered from `>=22.0.0` to `>=20.18.3` in `package.json`, `template.json` and the lockfile. `npm start -- -p 3020` fails on any Node version (`next start 3020` → "Invalid project directory"); use `PORT`. Keep vitest 3: vitest 4 requires Node ^22.12. The Vercel packaging script still selects the Node 22.x runtime for hosting. The later HCS and fulfill changes were not re-run on Node 20.
+`engines.node` was then lowered from `>=22.0.0` to `>=20.18.3` in `package.json`, `template.json` and the lockfile. `npm start -- -p 3020` fails on any Node version (`next start 3020` → "Invalid project directory"); use `PORT`. Keep vitest 3: vitest 4 requires Node ^22.12. The Vercel packaging script still selects the Node 22.x runtime for hosting. The later HCS and fulfill changes were re-run on Node 20 in the [fresh public scaffold](#fresh-public-scaffold--2026-10-01).
 
 ## Hosted app on the USDC checkout — 2026-10-01
 
