@@ -13,6 +13,7 @@ export function getConfig(requested?: string | null) {
     network as Network,
     network === selected ? process.env.HEDERA_CHECKOUT_ADDRESS : undefined,
     network === selected ? process.env.HEDERA_TOKEN_ID : undefined,
+    network === selected ? process.env.HEDERA_TOPIC_ID : undefined,
   );
 }
 

@@ -14,7 +14,7 @@ git config user.name
 git config user.email
 ```
 
-Use Node.js 22 or newer. Validation used Node 22.23.2 and npm 10.9.8. If Git's author fields are empty, configure your own name and email using `git config --global user.name` and `git config --global user.email` before using the generator. Do not copy someone else's identity.
+Use Node.js 20.18.3 or newer (`package.json` `engines`). A full install, lint, test, build, start and smoke run passed on Node 20.18.3 with npm 10.9.8 ([record](VALIDATION.md#node-20183-compatibility--2026-10-01)); earlier records used Node 22.23.2. On Node 20.18.x, `npm ci` prints `EBADENGINE` warnings for some transitive packages (vite, chokidar, unused React Native peers); they do not stop the install or the build. If Git's author fields are empty, configure your own name and email using `git config --global user.name` and `git config --global user.email` before using the generator. Do not copy someone else's identity.
 
 You also need internet access for npm packages, Hedera's public RPC and mirror node. Offline tests can pass while live quotes fail.
 
@@ -79,16 +79,16 @@ Stop the dev server with Ctrl+C before starting production on the same port:
 npm run lint
 npm test
 npm run build
-npm start
+npm start            # or PORT=3020 npm start for another port
 ```
 
 In another terminal at the project root:
 
 ```bash
-npm run smoke
+npm run smoke        # or SMOKE_ORIGIN=http://localhost:3020 npm run smoke
 ```
 
-Expected: lint and types pass, 31 tests pass, build completes, and smoke prints `OK` for the homepage, guide, invoice page and invalid-network response. The last check intentionally sends an invalid request and expects HTTP 400.
+Expected: lint and types pass, the TypeScript and 11 contract tests pass, the build completes, and smoke prints `OK` lines for the homepage, guide, examples and invoice pages, the invalid-network error, the preview allowlist and the example fulfill endpoint. The error checks intentionally send invalid requests and expect HTTP 400/404. Use `PORT=…` to change the port: `npm start -- -p 3020` is turned into `next start 3020` by the workspace wrapper and fails.
 
 `npm run probe` separately reads both live networks. Read its per-network results: the command only exits with failure if both probes fail. A zero exit code does not prove both networks are healthy.
 

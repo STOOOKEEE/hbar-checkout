@@ -16,6 +16,7 @@ import {
   bufferedGasLimit,
   rpcWeiToTinybar,
   readTransactionReceipt,
+  verifyInvoicePayment,
 } from "../src/index";
 import type { Invoice, Quote } from "../src/index";
 
@@ -47,8 +48,11 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("money and transaction construction", () => {
   it("adds headroom to Hedera gas estimates before wallet submission", () => {
-    // A live 113262-gas invoice transaction exhausted its unbuffered estimate.
-    expect(bufferedGasLimit(113262n)).toBe(226524n);
+    // createInvoice ran out of gas at exactly its 113247 estimate and
+    // succeeded at 120000 on testnet; the buffer must clear that with margin.
+    expect(bufferedGasLimit(113247n)).toBe(141559n);
+    expect(bufferedGasLimit(113262n)).toBe(141578n); // rounds up
+    expect(bufferedGasLimit(1n)).toBe(2n); // never returns the bare estimate
     expect(() => bufferedGasLimit(0n)).toThrow(/Cannot estimate/);
   });
   it("keeps token precision and rejects ambiguous/out-of-range amounts", () => {
@@ -86,7 +90,12 @@ describe("money and transaction construction", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            result: { transactionHash: hash, status: "0x1", to: null, logs: [] },
+            result: {
+              transactionHash: hash,
+              status: "0x1",
+              to: null,
+              logs: [],
+            },
           }),
         ),
       );
@@ -276,5 +285,87 @@ describe("live integration boundary", () => {
     await expect(
       quotePayment(config, { amount: "1", slippageBps: 50 }),
     ).rejects.toThrow(/fees/);
+  });
+});
+
+describe("invoice payment verification for fulfillment", () => {
+  const reference = `0x${"cd".repeat(32)}`;
+  const otherInvoice = invoiceId(invoice.merchant, "0x" + "ef".repeat(32));
+  function paidReceipt(id = invoice.id, amount = 1000000n) {
+    const event = checkoutInterface.encodeEventLog(
+      checkoutInterface.getEvent("InvoicePaid")!,
+      [id, entityAddress("0.0.101"), invoice.merchant, amount, 80n, 20n],
+    );
+    return {
+      transactionHash: reference,
+      status: "0x1",
+      to: config.checkout,
+      logs: [{ address: config.checkout, ...event }],
+    };
+  }
+  /** Stubs Hashio: deployment immutables, the invoice record and one receipt. */
+  function stubChain(invoiceStatus: 1 | 2, receipt: unknown) {
+    const immutables: Record<string, string> = {
+      router: config.router,
+      whbar: config.whbar,
+      token: config.token,
+    };
+    const fetcher = vi.fn(async (_url: string, init: RequestInit) => {
+      const { method, params } = JSON.parse(String(init.body));
+      if (method === "eth_getTransactionReceipt")
+        return Response.json({ result: receipt });
+      const call = checkoutInterface.parseTransaction({
+        data: params[0].data,
+      })!;
+      const values =
+        call.name === "invoices"
+          ? [
+              invoice.merchant,
+              BigInt(invoice.amount),
+              4_000_000_000n,
+              invoiceStatus,
+            ]
+          : [immutables[call.name]];
+      return Response.json({
+        result: checkoutInterface.encodeFunctionResult(call.name, values),
+      });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    return fetcher;
+  }
+  const verify = () =>
+    verifyInvoicePayment(config, { invoiceId: invoice.id, reference });
+
+  it("stays pending until the receipt is indexed and the invoice reads paid", async () => {
+    stubChain(1, null);
+    expect((await verify()).status).toBe("pending");
+    stubChain(1, paidReceipt());
+    expect((await verify()).status).toBe("pending");
+  });
+  it("returns the verified payment once the invoice is paid", async () => {
+    stubChain(2, paidReceipt());
+    const result = await verify();
+    expect(result.status).toBe("paid");
+    expect(result.status === "paid" && result.payment).toMatchObject({
+      transactionHash: reference,
+      amountOut: "1000000",
+      spentTinybar: "80",
+    });
+  });
+  it("rejects a receipt for another invoice or amount", async () => {
+    stubChain(2, paidReceipt(otherInvoice));
+    await expect(verify()).rejects.toThrow(/No matching InvoicePaid/);
+    stubChain(2, paidReceipt(invoice.id, 999n));
+    await expect(verify()).rejects.toThrow(/invoice terms/);
+  });
+  it("rejects a malformed reference before any network call", async () => {
+    const fetcher = stubChain(2, paidReceipt());
+    await expect(
+      verifyInvoicePayment(config, {
+        invoiceId: invoice.id,
+        reference: "0xabc",
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_RECEIPT" });
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });

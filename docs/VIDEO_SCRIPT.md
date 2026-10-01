@@ -2,66 +2,66 @@
 
 [Submission package](SUBMISSION.md) · [Payment evidence](VALIDATION.md) · [Developer walkthrough](REVIEW.md)
 
-**Target:** about 2 minutes 45 seconds; the submission form requires a public video URL under five minutes. Speak at a natural pace. The timecodes are editing targets, not exact audio durations. Show the product for almost the entire video; a presenter shot is useful only for the opening 10–15 seconds.
+**Target:** about 3 minutes; the submission form requires a public video URL under five minutes. The video follows the judging rubric: who uses it and why the integration is load-bearing, how a developer adopts it, which Hedera services it composes, and real testnet proof. Read only the **Voiceover** lines. Timecodes are editing targets.
 
-## What to collect from the presenter
+## Before recording
 
-1. **Image:** one sharp, front-facing, evenly lit photo of your own face, shoulders visible, at least 1024 pixels wide. Save as `portrait.jpg`. Avoid sunglasses, hair covering the mouth, filters and a busy background. A 10–15-second steady, front-facing **silent webcam video** is optional and produces a more natural talking-head result than animating a still photo.
-2. **Voice:** 15–30 seconds of your own English speech in a quiet room, with no music, echo or noise reduction effects. Save lossless mono or stereo WAV as `voice-ref.wav`; M4A is fine as an original, but convert it to WAV for the local script. Record this sample in one take, at a normal pace. Supply the **verbatim transcript** in `voice-ref.txt`, including contractions and product names. A plausible sample to read is: “Hi, I'm [your name]. I'm building SaucerPay on Hedera. Customers pay in H-bar while merchants receive a fixed amount of SAUCE or USDC. SaucerSwap provides the live quote. In this demo I'll show the checkout, a real testnet receipt, and what developers can reuse.” Put your actual name in both recording and transcript; write only words you actually said.
-3. **Presenter name:** spelling and preferred pronunciation for the 10-second introduction.
+- Hosted app: https://saucerpay-hedera.vercel.app (testnet USDC `0.0.5449`, checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`, HCS topic `0.0.10814952`).
+- **Scene 4 has two versions.** Record version A only after a real HashPack payment works on the hosted app (needs `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` on Vercel and a HashPack testnet account holding about 1 HBAR). Otherwise use version B, which shows only recorded evidence. Never present a wallet click as the origin of a transaction it did not produce.
+- Two browser profiles help: one HashPack account as merchant, another as payer. Keep seed phrases, private keys and personal tabs out of frame.
+- Record at 1920×1080, 30 fps, browser zoom 125–150 % so amounts are readable.
 
-Place these personal files in the local, Git-ignored `.video-work/` folder. Do not add your face, voice, wallet keys or private login links to the public repository. The existing screen-only B-roll is there as a starting point. No personal media is needed to finish the script or plan.
+## Script
 
-## Exact English narration and images
+### 00:00–00:15 — Hook
 
-Read only the **Voiceover** text. The screen directions and bracketed name are production notes. The line about browser signing is deliberate: the recorded payment used the two-account testnet script, while the injected-wallet signing path has not been live tested.
+**Screen:** your face or the hosted workspace with the title `SaucerPay · Scaffold-HBAR template`. Caption: `Price in USDC. Get paid from HBAR.`
 
-### 00:00–00:14 — Presenter / promise
+**Voiceover:** “Your Hedera users hold H-bar. Your business prices in USDC. SaucerPay is a Scaffold-HBAR template that closes that gap: the customer pays in H-bar, and the merchant receives the exact USDC amount, in one transaction.”
 
-**Screen:** 10–14 seconds of your own animated portrait in a small clean frame, or a real webcam take. If using the generated version, label it `AI-assisted presenter, own face and voice`. Add the project name and `Scaffold-HBAR × SaucerSwap` on screen. Cut to the app immediately.
+### 00:15–00:40 — Who it is for and why SaucerSwap is load-bearing
 
-**Voiceover:** “Hi, I'm [YOUR NAME]. I built SaucerPay, a Scaffold-HBAR starter for token payments. Customers hold H-bar; merchants ask for a fixed token amount.”
+**Screen:** `/examples` (service invoice, prepaid API credits), then the live quote panel with `USDC · Mainnet (read only)`, enter `25`, click **Get live quote**.
 
-### 00:14–00:36 — The developer problem
+**Voiceover:** “It is for teams building service invoices, marketplace checkout or prepaid API credits on Hedera. The conversion comes from a real SaucerSwap pool, with an exact-output route: it computes the H-bar needed to deliver a fixed USDC amount. Remove SaucerSwap and the template has no way to settle a USDC price from H-bar. Mainnet here is a live, read-only quote.”
 
-**Screen:** hosted workspace; show `Pay with HBAR`, the selected settlement token, and the live quote panel. Use the commercial USDC preset as a **mainnet quote preview only**. Keep `Mainnet · read-only` visible.
+### 00:40–01:05 — Merchant creates an invoice (HCS label)
 
-**Voiceover:** “Imagine building service invoices or prepaid API credits. Your customer has H-bar, but you price in a token. Integrating live liquidity, amount limits, settlement and a verifiable receipt is substantial work. This starter gives you that payment path to adapt.”
+**Screen:** workspace → **HashPack** → approve in HashPack → amount `1`, label `Logo design`, **Create payment link** → approve both prompts → the invoice row appears with its label. Briefly open the topic on HashScan: https://hashscan.io/testnet/topic/0.0.10814952. If HashPack is not set up, show the existing paid invoice's label and the HashScan topic instead and skip the clicks.
 
-### 00:36–00:59 — Load-bearing integration
+**Voiceover:** “The merchant connects HashPack, signing native Hedera transactions, so ED25519 accounts work too. The invoice terms, merchant, amount and expiry are fixed in the smart contract. The description goes to a Hedera Consensus Service topic. Anyone can write to that topic, but the app only shows a label submitted by the invoice's own merchant account. We tested this live: a fake label from another account was ignored.”
 
-**Screen:** request a live USDC quote, show required HBAR and maximum spend, then change the token amount and show the quote refresh. On-screen label: `SaucerSwap quote · read only`.
+### 01:05–01:40 — Payer pays in HBAR
 
-**Voiceover:** “The quote comes from a real SaucerSwap pool, not a hard-coded exchange rate. SaucerSwap's exact-output route is essential: it determines the H-bar needed to deliver the merchant's fixed token amount. Without that liquidity and router, this checkout cannot perform the conversion.”
+**Version A (live HashPack payment):** open the payment link in the payer profile → **Get payment quote** → show estimated and maximum HBAR → wallet **HashPack** → pay → “Settled and verified”.
 
-### 00:59–01:25 — What the template enforces
+**Version B (recorded evidence):** open the [paid USDC invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) and zoom on `Paid`, `1 USDC`, `0.43988881 HBAR converted`, `0.00219945 HBAR returned`, then the [mirror-node result](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8).
 
-**Screen:** simple four-step graphic or code/docs view: `invoice terms → quote → exact-output swap → verified receipt`. Highlight `exact token delivery`, `maximum HBAR spend` and `surplus refund`. Do not portray a quote as a completed payment.
+**Voiceover (A):** “The payer gets a quote with a maximum spend, and pays from HashPack. In one transaction the contract swaps through SaucerSwap, checks that the merchant's USDC balance rose by exactly the invoice amount, and refunds unused H-bar. The page then verifies the receipt against the invoice.”
 
-**Voiceover:** “The contract fixes the merchant, token amount and expiry. At payment time it calls SaucerSwap, checks the merchant's actual token balance increase, and returns unused H-bar to the payer. The payment and invoice update happen in one transaction. If a required step fails, settlement reverts.”
+**Voiceover (B):** “This is a real testnet payment between two accounts. The merchant received exactly one USDC. The payer spent 0.43988881 H-bar on the conversion, and 0.00219945 H-bar of unused input came back, in the same transaction. Testnet pool prices are not market prices. The receipt is verified against the invoice, not just a transaction hash.”
 
-### 01:25–02:02 — Real testnet proof
+### 01:40–02:20 — Adopt it in ten lines
 
-**Screen:** only after the hosted Vercel environment is updated to token `0.0.5449` and checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`, open the [paid USDC invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) and zoom on `Paid`, merchant and payer addresses, `1 USDC`, spent HBAR and refund. Until then, skip the paid page. Show the successful [Hedera Mirror Node transaction](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8). Do not show a wallet click as though it produced this transaction.
+**Screen:** terminal: `npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate`, then the `/examples` snippets: `<PayWithHbar invoiceId=… onPaid=… />` and `verifyInvoicePayment(...)` in the fulfill route. Show `README.md` and `AGENTS.md` for a second each.
 
-**Voiceover:** “Here is an actual Hedera testnet payment with a separate payer and merchant. The merchant received exactly one testnet USDC. Conversion spent 0.43988881 H-bar, and 0.00219945 H-bar of unused input returned to the payer; network fees are separate. Testnet pool prices are not market prices. The public mirror-node result verifies the invoice and transaction. We executed this payment with the included two-account testnet script.”
+**Voiceover:** “A developer generates it with one Scaffold-HBAR command. On the frontend, drop in the PayWithHbar component with an invoice ID. On the server, call verifyInvoicePayment before fulfilling the order: it checks the deployment, the invoice and the receipt. The included fulfillment example is idempotent, so a second call never delivers twice. Your app keeps its own order database; the payment path is done.”
 
-### 02:02–02:35 — Why a developer would start here
+### 02:20–02:45 — Hedera depth and quality
 
-**Screen:** show `npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate`, `/examples` with service invoice and prepaid credits, shared `QuotePreview` component, README/AGENTS, and `npm run submission:check`. Overlay the GitHub URL. A quick terminal snippet or docs screenshot is enough; no need to run a new payment on camera.
+**Screen:** the architecture diagram in `docs/ARCHITECTURE.md`, then `npm test` output and `docs/VALIDATION.md`.
 
-**Voiceover:** “This is a reusable starting point, not just a checkout page. Generate it with Scaffold-HBAR, then adapt the token and invoice flow. The shared quote component already appears in service billing and prepaid-credit examples. Your app still owns fulfillment and credit accounting. Guides, tests and a checker against Hedera RPC and mirror data show how to extend and verify the payment.”
+**Voiceover:** “Under the hood it composes a Solidity contract, HTS tokens, the Consensus Service, native HashPack transactions and the mirror node for verification. It ships with tests, measured gas limits, Node 20 support, and a validation log where every claim links to a testnet transaction.”
 
-### 02:35–02:52 — Clear limit and close
+### 02:45–03:00 — Close
 
-**Screen:** project title, hosted demo and GitHub URL. Small visible caption: `Testnet USDC payment verified · Mainnet USDC quote read-only`.
+**Screen:** hosted URL and GitHub URL. Caption: `Testnet USDC payment verified · Mainnet quote read-only · Unaudited template`.
 
-**Voiceover:** “The USDC mainnet screen is a live quote preview, not a settled mainnet payment. The verified settlement is on testnet. Inspect the code, run the scaffold, and reproduce that payment with the validation guide. If your Hedera app needs H-bar-funded token checkout, SaucerPay gives you a working starting point.”
+**Voiceover:** “SaucerPay: price in USDC, get paid from H-bar, on Hedera. The contract is not audited and mainnet signing is disabled; everything shown settles on testnet. Clone it and ship your checkout.”
 
-## Capture and edit checklist
+## Edit checklist
 
-- Record the hosted app at **1920×1080, 16:9, 30 fps**, zooming the browser UI enough for readable amounts. Keep browser notifications, personal accounts and wallet secrets out of frame. Existing silent local clips cover 51 seconds of product and docs footage; use them as source material, not as evidence of a new payment.
-- Make the onscreen distinction between **mainnet USDC quote** and **testnet USDC payment** visible throughout. The testnet transaction, mirror-node result and (once the hosted env is updated) paid page are the payment evidence.
-- Prefer hard cuts and close-ups of the values being discussed. Add captions for `1 USDC`, `0.43988881 HBAR spent` and `0.00219945 HBAR returned`. Keep narration quieter under any interface sound; the existing clips are silent.
-- Check every visible URL and number against [Validation](VALIDATION.md). The separate payer/merchant addresses and amounts are recorded there. Readability and proof matter more than a long talking-head segment.
-- Export H.264/AAC MP4, 1080p, with subtitles if practical. Watch it once without sound: the mainnet read-only label, testnet proof and developer entry point should still be clear. Host the final video at a public URL accessible without login before entering it into the submission form.
+- Captions on every number shown (`1 USDC`, spent HBAR, returned HBAR) and on `Mainnet · read only` whenever the mainnet quote is visible.
+- Hard cuts, close-ups on values. No music louder than the voice.
+- Check every URL and number against [Validation](VALIDATION.md) before export.
+- Export H.264/AAC MP4 1080p, add subtitles if possible, upload as public or unlisted (no login needed), then paste the URL into the form.

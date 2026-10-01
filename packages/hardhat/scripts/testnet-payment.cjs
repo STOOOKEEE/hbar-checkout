@@ -3,9 +3,8 @@ const { readFile, writeFile } = require("node:fs/promises");
 const path = require("node:path");
 
 async function gasLimit(method, ...args) {
-  // Hedera gas estimates can be too tight for writes. The first
-  // live invoice creation exhausted exactly its 113262-gas estimate.
-  return (await method.estimateGas(...args)) * 2n;
+  // Same rule as bufferedGasLimit in packages/checkout/src/index.ts.
+  return ((await method.estimateGas(...args)) * 5n + 3n) / 4n;
 }
 
 async function main() {

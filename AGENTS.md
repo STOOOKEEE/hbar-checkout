@@ -13,19 +13,21 @@ For product scope, consult [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) and 
 
 ## Environment and commands
 
-Use Node.js 22+ and npm workspaces. Install with `npm ci` at the repository root. `npm run dev` starts the Next.js app without secrets. Real quotes need internet access. Mainnet is read-only in the reference flow.
+Use Node.js 20.18.3+ and npm workspaces. Install with `npm ci` at the repository root. `npm run dev` starts the Next.js app without secrets. Real quotes need internet access. Mainnet is read-only in the reference flow.
 
 | Task                                   | Source / command                                              |
 | -------------------------------------- | ------------------------------------------------------------- |
 | Change merchant UI                     | `packages/nextjs/components/Workspace.tsx`                    |
-| Change payer UI or recovery            | `packages/nextjs/components/Payment.tsx`                      |
+| Change payer UI or recovery            | `packages/nextjs/components/PayWithHbar.tsx` (`Payment.tsx` is only the `/pay` page shell) |
 | Change wallet connection               | `packages/nextjs/lib/wallet.ts`                               |
 | Change server env handling             | `packages/nextjs/lib/server.ts`                               |
 | Change amounts, quote or receipt logic | `packages/checkout/src/index.ts`                              |
+| Change HCS label format or trust rule  | `packages/checkout/src/hcs.ts`                                |
+| Change the example fulfillment gate    | `packages/nextjs/app/api/orders/[orderId]/fulfill/route.ts`   |
 | Change invoice settlement              | `packages/hardhat/contracts/SaucerPay.sol`                    |
 | Run the documented no-key example      | `npx tsx packages/checkout/examples/quote.ts`                 |
 | Validate source                        | `npm run lint`, `npm test`, `npm run build`                   |
-| Validate served routes                 | `npm start`, then `npm run smoke` in another terminal         |
+| Validate served routes                 | `PORT=3020 npm start`, then `SMOKE_ORIGIN=http://localhost:3020 npm run smoke` (not `npm start -- -p`) |
 | Probe live dependencies                | `npm run probe`; inspect both results, not only the exit code |
 
 The read-only `QuotePreview` component is shared by the workspace and product examples. Keep the preset allowlist separate from configured invoice endpoints; do not enable mainnet signing when adding preview assets. Quotes carry chain/checkout/router/token/WHBAR context and must match the transaction configuration.
@@ -45,15 +47,17 @@ The quote example is included in the checkout package's TypeScript checks. Keep 
 - Verify deployment immutables and merchant token association before the invoice payment path. These checks do not guarantee future liquidity or policies.
 - Preserve duplicate-payment rejection, expiry, merchant-only cancellation and reentrancy protection.
 - Preserve receipt recovery after refresh. After an uncertain send, check the existing transaction before retrying payment.
-- Fulfillment requires separate authenticated order mapping and idempotency. Payment verification does not deliver a product or credit an account.
+- Fulfillment requires separate authenticated order mapping and idempotency; gate it on `verifyInvoicePayment` with the invoice ID from the order record, never the browser. `onPaid` is not proof. Payment verification does not deliver a product or credit an account.
+- HCS labels are descriptive only. Keep the rule that a label counts only if its mirror `payer_account_id` is the invoice's on-chain merchant account and it reached consensus after the merchant's `createInvoice` call, first in consensus order, within bounded mirror scans. Never read amount, recipient or status from HCS.
+- Send every contract write with `bufferedGasLimit(estimate)` (+25 %); the bare Hedera estimate has failed with `INSUFFICIENT_GAS`.
 
 ## Configuration and secrets
 
 Only Hardhat reads `packages/hardhat/.env`. Only the Next.js server reads its `.env.local`. No private key belongs in the frontend, `NEXT_PUBLIC_*`, logs, docs or Vercel runtime. Keep `.vercel` state and private claim links out of commits.
 
-Testnet writes require a funded ECDSA secp256k1 account. `npm run hardhat:deploy` and `npm run testnet:payment` perform real writes; ordinary tests, the quote example and probe do not. Follow the user's existing authorization and [deployment instructions](docs/DEPLOYMENT.md). Do not request new credentials when the task only needs reads or local work.
+Testnet writes require a funded ECDSA secp256k1 account. `npm run hardhat:deploy`, `npm run hardhat:topic` and `npm run testnet:payment` perform real writes; ordinary tests, the quote example and probe do not. Follow the user's existing authorization and [deployment instructions](docs/DEPLOYMENT.md). Do not request new credentials when the task only needs reads or local work.
 
-This repository now has a verified testnet deployment and a two-wallet payment; see `docs/VALIDATION.md`. The local signer belongs only in the ignored `packages/hardhat/.env`. Never put a key in Git, documentation, frontend env or Vercel. Use actual public metadata for any additional transaction claims.
+This repository has a verified testnet USDC deployment, a two-wallet payment and an HCS topic; see `docs/VALIDATION.md`. The local signer belongs only in the ignored `packages/hardhat/.env`. Never put a key in Git, documentation, frontend env or Vercel. `HEDERA_TOPIC_ID` and `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` are public. Use actual public metadata for any additional transaction claims. No real HashPack session has been tested; do not claim one.
 
 ## Validation appropriate to a change
 

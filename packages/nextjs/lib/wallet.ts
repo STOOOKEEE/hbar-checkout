@@ -26,6 +26,11 @@ export type Wallet = {
   send(request: ContractRequest): Promise<string>;
   /** Associates the settlement token with this account and waits for success. */
   associate(): Promise<void>;
+  /**
+   * Submits an HCS message and waits for consensus; returns the Hedera
+   * transaction ID. HashPack only: EVM wallets cannot sign HCS transactions.
+   */
+  publish?(topicId: string, message: string): Promise<string>;
 };
 
 const ASSOCIATE_CALLDATA = "0x0a754de6"; // HIP-719 token facade associate()
@@ -229,6 +234,16 @@ async function connectHashPack(config: CheckoutConfig): Promise<Wallet> {
       await transaction.freezeWithSigner(signer);
       const result = await transaction.executeWithSigner(signer);
       await result.getReceiptWithSigner(signer); // throws unless SUCCESS
+    },
+    async publish(topicId, message) {
+      const sdk = await import("@hiero-ledger/sdk"); // lazy, see hashPackConnector
+      const transaction = new sdk.TopicMessageSubmitTransaction()
+        .setTopicId(topicId)
+        .setMessage(message);
+      await transaction.freezeWithSigner(signer);
+      const result = await transaction.executeWithSigner(signer);
+      await result.getReceiptWithSigner(signer); // throws unless SUCCESS
+      return result.transactionId.toString();
     },
   };
 }

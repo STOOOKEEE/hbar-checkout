@@ -21,7 +21,8 @@ export default function Guide() {
         </p>
         <pre>{`npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate\ncd your-project\nnpm run dev`}</pre>
         <p>
-          Use Node.js 22 or later. Select Next.js, Hardhat and npm if prompted.
+          Use Node.js 20.18.3 or later. Select Next.js, Hardhat and npm if
+          prompted.
         </p>
       </section>
       <section className="panel">
@@ -45,6 +46,11 @@ export default function Guide() {
             <code>HEDERA_CHECKOUT_ADDRESS</code>, then restart the app.
           </li>
           <li>
+            Optional: run <code>npm run hardhat:topic</code> and set{" "}
+            <code>HEDERA_TOPIC_ID</code> to enable merchant labels on the
+            Hedera Consensus Service.
+          </li>
+          <li>
             Connect the merchant wallet, associate the settlement token, create
             a small invoice, then pay it with a funded payer wallet.
           </li>
@@ -59,13 +65,14 @@ export default function Guide() {
       </section>
       <section className="panel">
         <h2>Replace the screen, keep the payment flow</h2>
-        <pre>{`import { quotePayment, paymentTransaction } from '@saucerpay/checkout';\n\nconst quote = await quotePayment(config, {\n  invoiceId: purchase.invoiceId,\n  slippageBps: 50,\n});\nconst tx = await signer.sendTransaction(\n  paymentTransaction(config, quote)\n);`}</pre>
+        <pre>{`import { PayWithHbar } from '@/components/PayWithHbar';\n\n<PayWithHbar\n  invoiceId={order.invoiceId}\n  onPaid={({ reference }) =>\n    fetch(\`/api/orders/\${order.id}/fulfill\`, {\n      method: 'POST',\n      body: JSON.stringify({ invoiceId: order.invoiceId, reference }),\n    })\n  }\n/>`}</pre>
         <p>
-          The contract binds the merchant and amount. Your app attaches its
-          order ID to the invoice reference and only fulfills the order after
-          verifying an <code>InvoicePaid</code> receipt. This snippet uses an
-          ethers signer; HashPack instead submits the same request as a native{" "}
-          <code>ContractExecuteTransaction</code> (see <code>lib/wallet.ts</code>).
+          The contract binds the merchant and amount. The component handles the
+          quote, HashPack or MetaMask signing and receipt recovery. Your server
+          fulfills the order only after{" "}
+          <code>verifyInvoicePayment</code> confirms the{" "}
+          <code>InvoicePaid</code> receipt for the invoice stored with that
+          order; <code>onPaid</code> alone is not proof.
         </p>
       </section>
       <section className="panel">

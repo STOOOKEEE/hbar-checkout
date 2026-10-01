@@ -15,7 +15,7 @@ Import this repository into your Vercel account with these settings:
 | Framework                                       | Next.js                   |
 | Root Directory                                  | `packages/nextjs`         |
 | Include source files outside the Root Directory | Enabled                   |
-| Node.js                                         | 22.x                      |
+| Node.js                                         | 22.x (what the packaging script selects; the source supports ≥ 20.18.3) |
 | Install Command                                 | `npm ci`                  |
 | Build Command                                   | `npm run build`           |
 | Output Directory                                | Next.js default (`.next`) |
@@ -29,21 +29,20 @@ These are the settings for a Git-connected monorepo deployment. The current
 public demo was validated using the packaged CLI method below; the Git import
 settings have not been independently exercised in an authenticated account.
 
-Optional server-side variables are `HEDERA_NETWORK`, `HEDERA_TOKEN_ID` and
-`HEDERA_CHECKOUT_ADDRESS`. Mainnet remains read-only in the reference UI.
-HashPack also needs the public build-time variable
-`NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` (free at [cloud.reown.com](https://cloud.reown.com),
+Optional server-side variables are `HEDERA_NETWORK`, `HEDERA_TOKEN_ID`,
+`HEDERA_CHECKOUT_ADDRESS` and `HEDERA_TOPIC_ID` (public HCS invoice log). Mainnet
+remains read-only in the reference UI. HashPack also needs the public build-time
+variable `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` (free at [cloud.reown.com](https://cloud.reown.com),
 not a secret); redeploy after setting it. MetaMask works without it.
 Never upload `HEDERA_PRIVATE_KEY` or the Hardhat `.env` to Vercel.
 
-The current public site still sets these three variables for Hedera testnet,
-SAUCE `0.0.1183558` and the [earlier SAUCE checkout](VALIDATION.md#earlier-sauce-testnet-deployment-and-payment--2026-09-22),
-whose [paid invoice](https://saucerpay-hedera.vercel.app/pay/0x8f97d7a7c61394e9f927e2b0d9d7b62fc396d091cfffc0475ab3b13493b58e61?tx=0xd9d3d092b020d8d0e05825f7636f1be6085d3e935a18d2286d4a5448f42a85d1)
-can be inspected without a wallet. To serve the [USDC reference deployment](VALIDATION.md#live-testnet-usdc-deployment-and-payment--2026-10-01),
-update them to `HEDERA_TOKEN_ID=0.0.5449` and
-`HEDERA_CHECKOUT_ADDRESS=0x140e27Cf63790a558d66C8796A67984d5164055E`, then
-redeploy; this has not been done yet. The deployer and payer keys were not
-uploaded to Vercel.
+The current public site serves Hedera testnet, USDC `0.0.5449` and the
+[USDC reference checkout](VALIDATION.md#hosted-app-on-the-usdc-checkout--2026-10-01)
+`0x140e27Cf63790a558d66C8796A67984d5164055E`; its
+[paid invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8)
+can be inspected without a wallet. `HEDERA_TOPIC_ID=0.0.10814952` is set in the
+project. `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is not, so HashPack is unavailable
+on the hosted app. The deployer and payer keys were not uploaded to Vercel.
 
 ## Package the demo for a CLI deployment
 

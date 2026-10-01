@@ -66,6 +66,14 @@ It writes actual transaction metadata to `deployments/testnet.json` (ignored by 
 
 **Checkpoint:** the command exits successfully, the evidence file contains the actual address/hash, and its public HashScan link shows a successful deployment. If it fails, resolve the error before configuring the frontend with an address.
 
+### Optional: create the HCS invoice log
+
+```bash
+npm run hardhat:topic
+```
+
+This creates a public HCS topic (memo `saucerpay:<checkout>`, admin key = deployer, **no submit key**) for the checkout in `deployments/testnet.json`, saves `topicId` there and prints `HEDERA_TOPIC_ID=0.0.…`. It costs a small HCS fee and is idempotent: a second run prints the saved ID. Without a topic, everything works except invoice labels and **Load my invoices**. Anyone may post to the topic; readers trust only messages paid by the invoice's on-chain merchant ([design](ARCHITECTURE.md#hcs-invoice-log)).
+
 ## 4. Connect the app
 
 ```bash
@@ -78,12 +86,14 @@ Set the actual deployed address:
 HEDERA_NETWORK=testnet
 HEDERA_TOKEN_ID=0.0.5449
 HEDERA_CHECKOUT_ADDRESS=<actual-deployed-EVM-address>
+# Optional, public: printed by npm run hardhat:topic
+HEDERA_TOPIC_ID=<topic-id>
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=<public-project-id-from-cloud.reown.com>
 ```
 
 Run/restart `npm run dev`. Environment changes require restarting the Next.js process.
 
-For your hosted Vercel copy, set the same server variables and `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` in project settings and redeploy. The project ID is public, not a secret; without it HashPack is unavailable but MetaMask still works. Never add the Hardhat key to Vercel. See [web hosting](HOSTING.md).
+For your hosted Vercel copy, set the same server variables and `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` in project settings and redeploy. The topic and project IDs are public, not secrets; without the project ID HashPack is unavailable but MetaMask still works. Never add the Hardhat key to Vercel. See [web hosting](HOSTING.md).
 
 In the workspace, choose **HashPack** (default) or **MetaMask**; the payment page has a **Wallet** selector. HashPack connects through its browser extension if detected, otherwise a WalletConnect QR code for mobile, and signs native Hedera transactions (ED25519 or ECDSA accounts). MetaMask needs a funded testnet ECDSA account; its Connect button requests Hedera testnet (chain 296 / `0x128`) and offers the canonical testnet RPC if the wallet does not know it. For a realistic demo, use separate merchant and payer wallets or browser profiles.
 
@@ -92,13 +102,13 @@ In the workspace, choose **HashPack** (default) or **MetaMask**; the payment pag
 ## 5. Merchant and payer flow
 
 1. Connect the merchant wallet. Click **Associate the settlement token**. Association is a Hedera token operation signed by that account, not an ERC20 spending approval.
-2. Allow mirror-node indexing to catch up. Create a small invoice, such as `1 USDC`. The merchant signs invoice creation.
-3. Open the payment page and copy its URL. Record this link: the workspace's list only lasts for the current session.
-4. Open it using the payer wallet. Request a quote, review maximum HBAR spend plus additional network fees, then pay.
+2. Allow mirror-node indexing to catch up. Create a small invoice, such as `1 USDC`. The merchant signs invoice creation. With a topic and HashPack, fill in **Label (shown to the payer)**: HashPack asks for a second approval to publish it on HCS. MetaMask cannot sign HCS messages, so leave the label empty when using it; the workspace checks this before creating the invoice.
+3. Open the payment page and copy its URL. **Your invoices** lists invoices created in this browser session; with a topic, **Load my invoices** rebuilds the connected merchant's recent labelled invoices from HCS, newest first (labels appear about 5–10 s after consensus).
+4. Open the link using the payer wallet. Request a quote, review maximum HBAR spend plus additional network fees, then pay.
 5. The payment page verifies the actual receipt against invoice ID, merchant, amount and emitting checkout contract.
-6. Reload the URL containing `?tx=<actual-reference>`: a `0x` EVM hash (MetaMask) or a Hedera transaction ID such as `0.0.x@s.n` (HashPack). The server retrieves and verifies the receipt again. Save the HashScan/mirror link for the bounty. **Download verified receipt** exports public payment JSON; `npm run submission:check -- /path/to/receipt.json` independently rechecks it against the network.
+6. Reload the URL containing `?tx=<actual-reference>`: a `0x` EVM hash (MetaMask) or a Hedera transaction ID such as `0.0.x@s.n` (HashPack). The server retrieves and verifies the receipt again. **Download verified receipt** exports public payment JSON; `npm run submission:check -- /path/to/receipt.json` independently rechecks it against the network.
 
-**Checkpoint:** the invoice shows paid, the receipt matches the configured contract/invoice/merchant/amount, and the merchant's token balance increased by the invoice amount. A payment screenshot or a wallet notification alone is insufficient. Save the payment link before closing the workspace; its invoice list is not a persistent history.
+**Checkpoint:** the invoice shows paid, the receipt matches the configured contract/invoice/merchant/amount, and the merchant's token balance increased by the invoice amount. A payment screenshot or a wallet notification alone is insufficient. Unlabelled invoices are not in the HCS history, so keep their payment links.
 
 If a payment transaction was submitted but receipt retrieval timed out, refresh status before retrying. If HashScan confirms it reverted and the invoice remains open, remove the `tx` parameter from the URL and request a fresh quote. Contract replay protection rejects an already-paid invoice.
 
@@ -112,7 +122,7 @@ npm run testnet:payment
 
 The script enforces `MAX_TESTNET_HBAR` before submitting association or invoice transactions. The cap covers conversion only, not network fees. It writes actual evidence to `deployments/payment-evidence.json`: creation hash, payment hash, amount received, HBAR spent/refunded, and explorer links.
 
-This is a live testnet integration check. It is separate from `npm test`, which uses local mocks. The script now supports separate merchant and payer accounts, but its success does not replace testing the wallet UI (no real HashPack or MetaMask signature has been exercised live). The live run exposed a Hedera gas estimate too tight for invoice creation; the script and UI add headroom before submitting writes. Network fees are additional to the HBAR conversion cap.
+This is a live testnet integration check. It is separate from `npm test`, which uses local mocks. Its success does not replace testing the wallet UI: no real HashPack session or MetaMask UI signature has been exercised live. Like the UI, the script sends each write with the gas estimate +25 % (`bufferedGasLimit`), because the bare Hedera estimate ran out of gas on invoice creation. Network fees are additional to the HBAR conversion cap; on 2026-10-01 they were about 0.077 HBAR to create, 0.159 HBAR to pay and 0.035 HBAR to cancel an invoice ([measurements](VALIDATION.md#gas-limit-measurements--2026-10-01)).
 
 ## Common blockers
 

@@ -14,7 +14,7 @@
       "packageManager": "npm"
     },
     "requirements": {
-      "node": ">=22.0.0"
+      "node": ">=20.18.3"
     },
     "outro": {
       "sections": [

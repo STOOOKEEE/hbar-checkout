@@ -2,7 +2,13 @@
 
 [README](../README.md) · [API reference](REFERENCE.md) · [Architecture](ARCHITECTURE.md)
 
-Start from the generated monorepo. Keep the checkout package and contract; replace the invoice workspace with your service, product or top-up screen. `@saucerpay/checkout` is a local workspace package, not a public registry dependency.
+Start from the generated monorepo. Keep the checkout package, the contract and `PayWithHbar`; replace the invoice workspace with your service, product or top-up screen. `@saucerpay/checkout` is a local workspace package, not a public registry dependency.
+
+The integration has three seams:
+
+1. **Create** an on-chain invoice for each order and store its ID with the order (merchant wallet signs).
+2. **Pay** with the drop-in [`PayWithHbar`](../packages/nextjs/components/PayWithHbar.tsx) component (payer wallet signs).
+3. **Fulfill** on your server after `verifyInvoicePayment` says `paid`, exactly once.
 
 ## A small first change
 
@@ -24,13 +30,13 @@ export default function ServicePricing() {
 }
 ```
 
-Supported presets are `mainnet-usdc`, `testnet-sauce` and `mainnet-sauce`. This component is read-only. It clears stale results when inputs change and ignores responses belonging to superseded requests. It never creates an invoice or grants credits.
+Supported presets are `testnet-usdc`, `mainnet-usdc`, `testnet-sauce` and `mainnet-sauce`. This component is read-only. It clears stale results when inputs change and ignores responses belonging to superseded requests. It never creates an invoice or grants credits.
 
 ## Map a product order to an invoice
 
 Choose a merchant wallet and a non-sensitive, unique bytes32 reference. The reference is public; do not put customer data or a guessable hash of confidential information into it. The demo uses random bytes.
 
-Merchant creation is an on-chain transaction. This template does not include an unattended invoice signer. The following function assumes your UI has connected a merchant signer on testnet and collected an amount; it is an integration example, not a script that should load a private key in the browser.
+Merchant creation is an on-chain transaction. This template does not include an unattended invoice signer. The following function assumes your UI has connected a merchant EVM signer on testnet and collected an amount; it is an integration example, not a script that should load a private key in the browser. With HashPack, the [workspace](../packages/nextjs/components/Workspace.tsx) sends the same call as a native `ContractExecuteTransaction` through [`wallet.ts`](../packages/nextjs/lib/wallet.ts).
 
 ```ts
 import { Contract, hexlify, randomBytes, type Signer } from "ethers";
@@ -38,6 +44,7 @@ import {
   CHECKOUT_ABI,
   assertAssociated,
   assertDeployment,
+  bufferedGasLimit,
   invoiceId,
   readToken,
   tokenUnits,
@@ -59,12 +66,17 @@ export async function createOrderInvoice(
   const token = await readToken(config);
   const reference = hexlify(randomBytes(32));
   const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+  const units = tokenUnits(amount, token.decimals);
   const contract = new Contract(checkout, CHECKOUT_ABI, merchantSigner);
-  const tx = await contract.createInvoice(
+  // Hedera's bare estimate can run out of gas; add the template's +25 %.
+  const estimate = await contract.createInvoice.estimateGas(
     reference,
-    tokenUnits(amount, token.decimals),
+    units,
     expiresAt,
   );
+  const tx = await contract.createInvoice(reference, units, expiresAt, {
+    gasLimit: bufferedGasLimit(estimate),
+  });
   const receipt = await tx.wait();
   if (!receipt || receipt.status !== 1)
     throw new Error("Creation unconfirmed.");
@@ -75,52 +87,89 @@ export async function createOrderInvoice(
 
 Obtain `config` from your configured server (`/api/config`) or `networkConfig("testnet", deployedAddress)`. Store the returned invoice ID alongside your application order. Include chain ID and checkout address in that mapping. Invoices are not scoped by a logged-in customer; anyone may pay an open invoice.
 
-## Reuse the payer page first
+### Optional: describe the invoice on HCS
 
-Return `/pay/<invoiceId>` on your deployment's origin. The included [Payment component](../packages/nextjs/components/Payment.tsx) already loads immutable terms, requests a quote, switches to testnet, constructs the payable transaction and recovers receipts after refresh.
+If `HEDERA_TOPIC_ID` is configured, a HashPack merchant can publish a one-line label (≤ 140 characters, check it with `isLabel`) after creating the invoice. The payer page shows it as "Description from the merchant", and **Load my invoices** rebuilds the merchant's recent labelled invoices from the topic. Validate the label and the wallet's `publish` capability before sending `createInvoice`, as the workspace does:
 
-For a custom UI, the sequence is:
+```ts
+import { encodeInvoiceMessage, type CheckoutConfig } from "@saucerpay/checkout";
+import type { Wallet } from "@/lib/wallet";
+
+export async function publishLabel(
+  config: CheckoutConfig,
+  wallet: Wallet,
+  id: string,
+  label: string,
+) {
+  if (!config.topicId || !wallet.publish)
+    throw new Error("Labels need a configured topic and HashPack.");
+  return wallet.publish(config.topicId, encodeInvoiceMessage(config, id, label));
+}
+```
+
+Readers accept a label only if the invoice's on-chain merchant paid for the message and it reached consensus after the invoice's creation, so a public topic is safe against impersonation and pre-posted labels. Never put the price or recipient only in a label: the contract terms are the payment. [HCS design and scan limits](ARCHITECTURE.md#hcs-invoice-log).
+
+## Drop in the payer component
+
+The simplest option is to link to `/pay/<invoiceId>` on your deployment's origin. To embed payment in your own page, render the component that `/pay` uses:
+
+```tsx
+import { PayWithHbar } from "@/components/PayWithHbar";
+
+export function OrderPayment({ order }: { order: { id: string; invoiceId: string } }) {
+  return (
+    <PayWithHbar
+      invoiceId={order.invoiceId}
+      onPaid={({ reference }) =>
+        fetch(`/api/orders/${order.id}/fulfill`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ invoiceId: order.invoiceId, reference }),
+        })
+      }
+    />
+  );
+}
+```
+
+It loads the immutable terms and any HCS label, requests a quote with a slippage selector, lets the payer choose HashPack or MetaMask, sends the payable transaction with a buffered gas limit, saves the reference in `?tx=` before waiting, recovers after refresh and offers a verified receipt download. `onPaid` receives the verified receipt plus `reference`; it fires on a fresh payment and again on recovery, so the server call must be idempotent. Props: [Reference](REFERENCE.md#paywithhbar-component).
+
+For a fully custom UI, the sequence is:
 
 1. Request `/api/quote?invoiceId=<id>&slippageBps=50` from your server.
 2. Display the token amount, merchant, maximum HBAR spend and additional network fee distinction.
-3. Connect a testnet signer using the existing [wallet adapter](../packages/nextjs/lib/wallet.ts).
-4. Pass the returned quote to `paymentTransaction(config, quote)` and send it with the signer.
-5. Save the transaction hash before waiting; use the receipt API to recover after interruption.
+3. Connect a wallet using the existing [wallet adapter](../packages/nextjs/lib/wallet.ts).
+4. Pass the returned quote to `paymentTransaction(config, quote)` and send it with the wallet.
+5. Save the transaction reference before waiting; use the receipt API to recover after interruption.
 
 An amount-only preview quote cannot be paid. Discard old quotes when the invoice, network or slippage changes. Never multiply token units by the HBAR conversion factor: the transaction builder handles native value conversion exactly once.
 
 ## Fulfill the order on your server
 
-Fetch the invoice and receipt independently through your configured contract/RPC. Do not accept a browser-supplied receipt, merchant address or price as authoritative. This function performs reads only and can be called from a server route:
+Do not accept a browser-supplied receipt, merchant address or price as authoritative. `verifyInvoicePayment` reads the invoice and the receipt itself, for an EVM hash or a Hedera transaction ID:
 
 ```ts
-import { JsonRpcProvider } from "ethers";
-import {
-  assertDeployment,
-  readInvoice,
-  verifyPaymentReceipt,
-  type CheckoutConfig,
-} from "@saucerpay/checkout";
+import { verifyInvoicePayment } from "@saucerpay/checkout";
+import { getConfig } from "@/lib/server";
 
-export async function readVerifiedPayment(
-  config: CheckoutConfig,
-  trustedInvoiceId: string,
-  transactionHash: string,
+export async function fulfillIfPaid(
+  order: { id: string; invoiceId: string },
+  reference: string,
+  fulfillOnce: (orderId: string, transactionHash: string) => Promise<void>,
 ) {
-  await assertDeployment(config);
-  const provider = new JsonRpcProvider(config.rpcUrl);
-  if ((await provider.getNetwork()).chainId !== BigInt(config.chainId))
-    throw new Error("RPC network mismatch.");
-  const invoice = await readInvoice(config, trustedInvoiceId);
-  const receipt = await provider.getTransactionReceipt(transactionHash);
-  if (!receipt) return null; // Pending: retry the read, not the payment.
-  return verifyPaymentReceipt(config, invoice, receipt);
+  const result = await verifyInvoicePayment(getConfig(), {
+    invoiceId: order.invoiceId, // from your authenticated order record
+    reference,
+  });
+  if (result.status === "pending") return "pending"; // Retry the read, not the payment.
+  await fulfillOnce(order.id, result.payment.transactionHash);
+  return "fulfilled";
 }
 ```
 
-The `trustedInvoiceId` comes from your authenticated order record, not an arbitrary customer query. Also compare the loaded invoice terms with that record. The verifier matches the chain receipt to the invoice; it does not know your product price or which application account owns an order.
+`pending` means the receipt is not indexed yet or the invoice does not read paid yet. A receipt for another invoice, merchant, amount or contract throws `CheckoutError` `INVALID_RECEIPT`. The verifier matches the chain receipt to the invoice; it does not know your product price or which application account owns an order, so also compare `result.invoice` with your record.
 
-Once verified, implement these **application-specific database steps**:
+The runnable [example endpoint](../packages/nextjs/app/api/orders/[orderId]/fulfill/route.ts) shows the full shape: input validation, order lookup, 409 on an invoice mismatch, 202 while pending and an idempotent 200. Its `exampleOrders` and `exampleFulfillments` maps are placeholders. Replace them with these **application-specific database steps**:
 
 1. Enforce a unique payment identity: `(chainId, checkoutAddress, invoiceId)`.
 2. In one database transaction, mark that order paid and enqueue fulfillment once.
@@ -141,10 +190,10 @@ Do not overwrite an existing deployment's configuration and assume old links sti
 
 | Change                         | Start here                                            | Preserve                                                      |
 | ------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------- |
-| Product or booking interface   | `Workspace.tsx`                                       | Immutable invoice amount/merchant                             |
-| Mobile wallet support          | `lib/wallet.ts`                                       | Chain checks and wallet consent                               |
-| Durable merchant history       | Event indexer + your database                         | Namespaced IDs and original deployment identity               |
-| Paid content or credits        | Server receipt verification + your fulfillment worker | Idempotency; payment is not delivery                          |
+| Product or booking interface   | `Workspace.tsx`, `PayWithHbar.tsx`                    | Immutable invoice amount/merchant                             |
+| Another wallet                 | `lib/wallet.ts`                                       | Chain checks, wallet consent, buffered gas limit              |
+| Durable merchant history       | HCS log (labelled invoices) or an event indexer + DB  | Merchant-only label rule; original deployment identity        |
+| Paid content or credits        | `verifyInvoicePayment` + your fulfillment worker      | Idempotency; payment is not delivery                          |
 | Another swap protocol or route | Shared quote module + contract + tests                | Native units, exact output, budget, refunds and receipt rules |
 
 Contract, money-unit or receipt changes need meaningful regression tests and a real testnet check. UI copy changes do not establish new chain guarantees.

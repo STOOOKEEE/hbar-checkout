@@ -1,120 +1,143 @@
 # SaucerPay
 
-**Let customers pay in HBAR while your app receives an exact amount of an HTS token.**
+**Price in USDC. Let customers pay with the HBAR already in their HashPack wallet.**
 
-A [Scaffold-HBAR](https://docs.hedera.com/solutions/tools/scaffold-hbar/index) template for payment links and checkout flows, using SaucerSwap liquidity. The invoice workspace demonstrates the pattern; the TypeScript package and Solidity contract are the parts you reuse.
+SaucerPay is a [Scaffold-HBAR](https://docs.hedera.com/solutions/tools/scaffold-hbar/index) template for checkout on Hedera. A merchant creates an on-chain invoice for an exact amount of an HTS token (testnet USDC by default). The payer signs **one** transaction: the SaucerPay contract swaps their HBAR through SaucerSwap, checks that the merchant received exactly the invoiced tokens and refunds unused HBAR, or the whole transaction reverts. Your server then verifies the receipt before fulfilling the order. You reuse a React component, a server helper and the contract; the invoice workspace only demonstrates them.
 
-**[Open the live demo](https://saucerpay-hedera.vercel.app)** · **[Start locally](docs/GETTING_STARTED.md)** · **[Understand the flow](docs/ARCHITECTURE.md)** · **[Adapt it](docs/CUSTOMIZATION.md)**
+**[Live demo](https://saucerpay-hedera.vercel.app)** · **[Paid invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8)** · **[Start locally](docs/GETTING_STARTED.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Evidence](docs/VALIDATION.md)**
 
 ![SaucerPay workspace showing a live SaucerSwap quote and the testnet setup state](docs/workspace.png)
 
-## What can I try now?
+## Who it is for
 
-| Capability                                                  | Available                                                                                                                                 |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Open the hosted app and request real testnet/mainnet quotes | Yes — no installation or wallet                                                                                                           |
-| Install, run tests, build and explore the source            | Yes — no key required                                                                                                                     |
-| Create, cancel and pay invoices on testnet                  | Live checkout deployed; writes require a funded EVM wallet                                                                                |
-| Inspect a published SaucerPay payment transaction           | [Verified two-wallet USDC payment on the Hedera Mirror Node](https://testnet.mirrornode.hedera.com/api/v1/contracts/results/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) |
-| Pay invoices on mainnet                                     | Not enabled in this template                                                                                                              |
+Hedera dApps and merchants that **price in USDC (or another HTS token) while their users hold HBAR**:
 
-The example settles in **testnet USDC** (`0.0.5449`, a testnet token with a SaucerSwap V1 pool, not Circle's testnet issuance). Testnet pool prices are not market prices. The mainnet USDC preview reads real mainnet liquidity and is read-only. [Validation record](docs/VALIDATION.md).
+- **Service invoices and payment links:** a freelancer or agency bills 100 USDC; the client pays from HashPack in HBAR.
+- **Marketplace checkout:** the listing price stays fixed in USDC; the buyer does not swap manually first.
+- **Prepaid API or compute credits:** a developer tops up 20 USDC of credits with HBAR; your backend credits the account once.
 
-## Who should start here?
+If payer and merchant already hold the same asset, a direct transfer is simpler. [Use cases, related projects and tradeoffs](docs/USE_CASES.md).
 
-Use this template when building payment links, a service checkout or prepaid credits **where the buyer has HBAR and the seller requires another token**. You get a fixed recipient and amount, a conversion quote, a maximum HBAR spend, surplus return and a verifiable payment receipt.
+## Integrate in ten lines
 
-SaucerSwap supplies the conversion and existing pool liquidity. Removing it removes the ability to settle a token-denominated order with HBAR. SaucerPay supplies the invoice-specific checks around that integration. If both parties already use the same asset, a direct transfer can be simpler. [Use cases, evidence and tradeoffs](docs/USE_CASES.md).
+In a page of the generated Next.js app, drop in the payment component:
+
+```tsx
+import { PayWithHbar } from "@/components/PayWithHbar";
+
+<PayWithHbar
+  invoiceId={order.invoiceId}
+  onPaid={({ reference }) =>
+    fetch(`/api/orders/${order.id}/fulfill`, {
+      method: "POST",
+      body: JSON.stringify({ invoiceId: order.invoiceId, reference }),
+    })
+  }
+/>;
+```
+
+Fulfill only after your server has verified the payment on-chain:
+
+```ts
+import { verifyInvoicePayment } from "@saucerpay/checkout";
+import { getConfig } from "@/lib/server";
+
+const result = await verifyInvoicePayment(getConfig(), {
+  invoiceId: order.invoiceId, // from your database, never from the browser
+  reference, // EVM tx hash or Hedera transaction ID sent by onPaid
+});
+if (result.status === "paid") await fulfillOnce(order.id, result.payment);
+```
+
+`onPaid` is a UX signal, not proof. It fires again when a paid page is reloaded, so `fulfillOnce` must be idempotent. A working example endpoint is [`app/api/orders/[orderId]/fulfill`](packages/nextjs/app/api/orders/[orderId]/fulfill/route.ts). [Full recipe](docs/CUSTOMIZATION.md).
+
+## What is real, what is a placeholder
+
+| Real, verified on Hedera testnet ([evidence](docs/VALIDATION.md))                                                                                    | Placeholder or not yet tested                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| SaucerPay contract `0x140e…055E` settling testnet USDC `0.0.5449` through the SaucerSwap V1 router                                                   | `exampleOrders` / `exampleFulfillments` in the fulfill endpoint are in-memory maps standing in for your database |
+| Two-wallet payment: exactly 1 USDC delivered, unused HBAR refunded, receipt re-verified by `npm run submission:check`                                | The fulfill endpoint verifies payment but delivers nothing; delivery and credit ledgers are yours                 |
+| Native Hedera path (`ContractExecuteTransaction`, `TokenAssociateTransaction`) run by script with the same code HashPack uses                         | A real HashPack session and signature: not tested; it needs `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`               |
+| HCS invoice log `0.0.10814952`: a payer's fake label ignored, the merchant's label accepted                                                          | MetaMask signing through the UI: not exercised live                                                              |
+| Read-only mainnet USDC quote from real SaucerSwap liquidity                                                                                          | Mainnet payments: disabled. The contract is unaudited                                                            |
+
+## Hedera services used
+
+| Service                             | Role in SaucerPay                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Smart contracts (HSCS)              | [`SaucerPay.sol`](packages/hardhat/contracts/SaucerPay.sol) stores invoice terms and settles atomically                |
+| Token Service (HTS)                 | Settlement asset; merchant token association, freeze/KYC and custom-fee checks before payment                          |
+| Consensus Service (HCS)             | Optional public invoice log: merchant-signed labels and a rebuildable invoice history                                 |
+| Mirror node                         | Token metadata, association state, receipts by Hedera transaction ID, HCS messages                                     |
+| SaucerSwap V1 (ecosystem protocol)  | Exact-output HBAR→token swap from existing liquidity; without it HBAR cannot settle a USDC invoice                     |
+| HashPack via WalletConnect          | Native Hedera transactions, works with ED25519 and ECDSA accounts; MetaMask (ECDSA only) is the EVM alternative       |
 
 ## Run your own copy
 
-Prerequisites: **Node.js 22+**, npm, Git and internet access. The generator initializes a Git repository, so configure your Git author identity if you have not already done so. No Hedera account is needed for this first step.
+Prerequisites: **Node.js 20.18.3 or newer**, npm, Git with your author identity configured, and internet access. No Hedera account is needed to see live quotes.
 
 ```bash
 npx create-scaffold-hbar@latest --template STOOOKEEE/hedera-temlate
-```
-
-Choose a project name and accept Next.js, Hardhat and npm. After installation:
-
-```bash
 cd your-project
 npm run dev
 ```
 
-Open **http://localhost:3000**. In the quote panel, choose **USDC · Testnet**, enter `1` and click **Get live quote**. You should see the HBAR needed for 1 USDC, a maximum spend and a timestamp. Prices change; a failed network call displays an error, never a sample price.
+Choose Next.js, Hardhat and npm. Open http://localhost:3000, choose **USDC · Testnet** in the quote panel, enter `1` and click **Get live quote**. A failed network call shows an error, never a sample price. **Create payment link** stays disabled until you [deploy your checkout](docs/DEPLOYMENT.md); that is expected.
 
-**Create payment link is disabled until you configure a contract. This is expected.** Continue with [the first-run walkthrough](docs/GETTING_STARTED.md) or [deploy on testnet](docs/DEPLOYMENT.md).
-
-Prefer a direct clone?
-
-```bash
-git clone https://github.com/STOOOKEEE/hedera-temlate.git
-cd hedera-temlate
-npm ci
-npm run dev
-```
+Direct clone instead: `git clone https://github.com/STOOOKEEE/hedera-temlate.git && cd hedera-temlate && npm ci && npm run dev`.
 
 ## How a payment works
 
 ```mermaid
 flowchart LR
-    M[Merchant creates token invoice] --> I[Fixed amount and recipient]
-    I --> Q[Buyer reviews HBAR quote and limit]
-    Q --> C[SaucerPay calls SaucerSwap]
-    C --> T[Exact tokens to merchant]
-    C --> R[Unused HBAR to buyer]
-    T --> P[Verified invoice receipt]
+    M[Merchant creates invoice<br/>exact USDC amount] --> L[Optional HCS label]
+    M --> Q[Payer reviews HBAR quote<br/>and maximum spend]
+    Q --> C[One payInvoice transaction]
+    C --> S[SaucerSwap exact-output swap]
+    S --> T[Exact USDC to merchant]
+    C --> R[Unused HBAR to payer]
+    T --> V[Server verifies receipt<br/>then fulfills once]
 ```
 
-Invoice creation is one merchant transaction. **Settlement is one payer transaction** that converts HBAR, checks the merchant's received amount and returns unused HBAR. If a settlement check fails, the payment transaction reverts; network fees can still be charged.
-
-A quote alone is not payment. Fulfill an order only after checking a successful receipt against the configured contract and invoice. [Sequence, trust boundaries and Hedera units](docs/ARCHITECTURE.md).
+A quote is a read, not a payment. If any settlement check fails, the payment reverts; network fees can still be charged. [Sequence, trust boundaries and units](docs/ARCHITECTURE.md).
 
 ## Find the right guide
 
-| I want to…                                                 | Read                                       |
-| ---------------------------------------------------------- | ------------------------------------------ |
-| Get from a fresh scaffold to a live quote                  | [Getting started](docs/GETTING_STARTED.md) |
-| Fund a wallet, deploy, create and pay an invoice           | [Testnet deployment](docs/DEPLOYMENT.md)   |
-| Understand atomic settlement, association and amount units | [Architecture](docs/ARCHITECTURE.md)       |
-| Replace the UI, change the token or fulfill an order       | [Customization](docs/CUSTOMIZATION.md)     |
-| Look up env vars, API routes, events and helper functions  | [Reference](docs/REFERENCE.md)             |
-| Resolve setup, quote, wallet or receipt errors             | [Troubleshooting](docs/TROUBLESHOOTING.md) |
-| Host my copy on Vercel                                     | [Web hosting](docs/HOSTING.md)             |
-| Prepare the pitch, demo and verified receipt               | [Submission package](docs/SUBMISSION.md)   |
-| Evaluate the template for the bounty                       | [Reviewer walkthrough](docs/REVIEW.md)     |
-| Work with a coding agent                                   | [AGENTS.md](AGENTS.md)                     |
-
-The [product examples](https://saucerpay-hedera.vercel.app/examples) use the same `QuotePreview` component for a service invoice and a prepaid-credit purchase. Quotes are read-only; your application supplies order persistence and fulfillment.
+| I want to…                                                       | Read                                       |
+| ---------------------------------------------------------------- | ------------------------------------------ |
+| Go from a fresh scaffold to a live quote                         | [Getting started](docs/GETTING_STARTED.md) |
+| Deploy, create the HCS topic, create and pay an invoice          | [Testnet deployment](docs/DEPLOYMENT.md)   |
+| Understand settlement, trust, HCS labels and Hedera units        | [Architecture](docs/ARCHITECTURE.md)       |
+| Embed `PayWithHbar`, fulfill orders, change the token            | [Customization](docs/CUSTOMIZATION.md)     |
+| Look up env vars, API routes, exports and events                 | [Reference](docs/REFERENCE.md)             |
+| Fix a setup, quote, wallet, gas or receipt error                 | [Troubleshooting](docs/TROUBLESHOOTING.md) |
+| Host my copy on Vercel                                           | [Web hosting](docs/HOSTING.md)             |
+| See what was actually tested, with transaction IDs               | [Validation record](docs/VALIDATION.md)    |
+| Review the template for the bounty / prepare the submission      | [Reviewer walkthrough](docs/REVIEW.md) · [Submission](docs/SUBMISSION.md) |
+| Work with a coding agent                                         | [AGENTS.md](AGENTS.md)                     |
 
 ## Where to change the code
 
-| Location                                                                                     | Responsibility                                                                               |
-| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [`packages/checkout/src/index.ts`](packages/checkout/src/index.ts)                           | Quotes, amounts, deployment/association checks, payment transaction and receipt verification |
-| [`packages/checkout/examples/quote.ts`](packages/checkout/examples/quote.ts)                 | Runnable quote example with no credentials                                                   |
-| [`packages/hardhat/contracts/SaucerPay.sol`](packages/hardhat/contracts/SaucerPay.sol)       | Invoice terms, cancellation and atomic settlement                                            |
-| [`packages/nextjs/components/QuotePreview.tsx`](packages/nextjs/components/QuotePreview.tsx) | Reusable live conversion preview with explicit asset/network presets                         |
-| [`packages/nextjs/components/Workspace.tsx`](packages/nextjs/components/Workspace.tsx)       | Merchant workspace and quote preview                                                         |
-| [`packages/nextjs/components/Payment.tsx`](packages/nextjs/components/Payment.tsx)           | Payer flow and receipt recovery                                                              |
-| [`packages/nextjs/app/api`](packages/nextjs/app/api)                                         | Server-side reads; no server signing key                                                     |
+| Location                                                                                                    | Responsibility                                                                    |
+| ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`packages/checkout/src/index.ts`](packages/checkout/src/index.ts)                                          | Quotes, amounts, deployment/association checks, transactions, receipt verification |
+| [`packages/checkout/src/hcs.ts`](packages/checkout/src/hcs.ts)                                              | HCS invoice log: message format and the merchant-only label rule                  |
+| [`packages/hardhat/contracts/SaucerPay.sol`](packages/hardhat/contracts/SaucerPay.sol)                      | Invoice terms, cancellation and atomic settlement                                 |
+| [`packages/nextjs/components/PayWithHbar.tsx`](packages/nextjs/components/PayWithHbar.tsx)                  | Drop-in payer flow: quote, wallet, pay, `?tx=` recovery, verified receipt         |
+| [`packages/nextjs/components/Workspace.tsx`](packages/nextjs/components/Workspace.tsx)                      | Example merchant workspace (create, label, list invoices)                         |
+| [`packages/nextjs/lib/wallet.ts`](packages/nextjs/lib/wallet.ts)                                            | HashPack (native) and MetaMask (EVM) adapters                                     |
+| [`packages/nextjs/app/api`](packages/nextjs/app/api)                                                        | Server-side reads and the example fulfill endpoint; no server signing key         |
 
 ## Check your changes
 
-From the repository root:
-
 ```bash
-npm run lint
-npm test
-npm run build
+npm run lint && npm test && npm run build
+PORT=3020 npm start                                   # terminal 1
+SMOKE_ORIGIN=http://localhost:3020 npm run smoke      # terminal 2
 ```
 
-In two terminals, run `npm start` and then `npm run smoke`. Use `npm run probe` for real read-only quotes. The current suite has 20 TypeScript tests and 11 contract tests; local contract tests use mocks, not Hedera precompiles. [Exact evidence and remaining checks](docs/VALIDATION.md).
+`npm test` runs the TypeScript suite (quotes, units, receipts, HCS label rule, `verifyInvoicePayment`) and 11 contract tests; contract tests use mocks, not Hedera precompiles. Use `PORT=…` to change the port: `npm start -- -p 3020` does not work through the npm workspace wrapper. `npm run probe` reads live quotes on both networks.
 
 ## Scope and license
 
-One configured fungible HTS token per deployment, without custom transfer fees, reached through a direct SaucerSwap V1 WHBAR pool. The UI connects either HashPack (native Hedera transactions through WalletConnect; works with ED25519 and ECDSA accounts; needs `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`) or an injected EVM wallet such as MetaMask (ECDSA accounts only). A real HashPack session has not been tested yet; see [Validation](docs/VALIDATION.md#native-hedera-transaction-path-hashpack-code--2026-10-01). Invoice history in the workspace is temporary browser state. A production order database, credit ledger, subscription scheduler and fulfillment system are application extensions.
-
-The contract is unaudited. Mainnet signing is disabled in the reference flow. A [testnet USDC deployment and two-wallet payment](docs/VALIDATION.md#live-testnet-usdc-deployment-and-payment--2026-10-01) are verified; the contest entry has not been submitted.
-
-[MIT](LICENSE). Protocol references and design decisions are linked in [Architecture](docs/ARCHITECTURE.md); the original implementation plan is in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
+One fungible HTS token without custom fees per deployment, reached through a direct SaucerSwap V1 WHBAR pool. Mainnet is read-only. The contract is unaudited. This project does not use Hedera Harness. [MIT](LICENSE). Original plan and later decisions: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).

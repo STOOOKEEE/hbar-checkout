@@ -12,11 +12,17 @@ SaucerPay combines those steps through SaucerSwap's existing liquidity. This is 
 
 Sources: [HashFast in Hedera's winners announcement](https://hedera.com/blog/these-are-the-winners-of-the-hello-future-origins-hackathon/), [xMoney Invoices](https://www.xmoney.com/products/invoices).
 
-**Proposed adaptation:** a service portal requests 100 USDC; the customer pays HBAR and the merchant receives exactly 100 USDC or settlement reverts. The portal developer reuses invoice terms, live conversion, bounded spend and receipt verification, then adds their customer records and accounting integration.
+**Proposed adaptation:** a service portal requests 100 USDC; the customer pays HBAR from HashPack and the merchant receives exactly 100 USDC or settlement reverts. The portal reuses `PayWithHbar`, invoice terms, live conversion, bounded spend and `verifyInvoicePayment`; the merchant's HCS label ("Logo design – March") tells the customer what they are paying for. The portal developer adds customer records and accounting integration.
 
 **Current boundary:** the working example settles in testnet USDC (`0.0.5449`); mainnet USDC is a read-only quote. It is not a compliant accounting/invoicing product or a bank payout service. No HashFast or xMoney integration, endorsement or customer relationship is claimed.
 
-## 2. Prepaid API or compute credits
+## 2. Marketplace checkout
+
+**Proposed adaptation:** a Hedera goods or services marketplace lists items in USDC so prices do not move with HBAR. At checkout the buyer gets an invoice and pays it through `PayWithHbar`, without swapping manually; the order service calls `verifyInvoicePayment` before releasing the item. Invoices are signed by their merchant, so either the marketplace account is the merchant (and pays sellers out separately) or each seller signs its own invoices.
+
+**Current boundary:** one settlement token and one checkout per deployment; delivery (for example an NFT transfer) is a separate step, not atomic with payment. No marketplace has adopted this template.
+
+## 3. Prepaid API or compute credits
 
 **Observed need:** Novalax's author explicitly describes payment/monetization difficulties encountered while building an earlier agent marketplace. Novalax then offers USDC payments for data and digital services. Hedera also recognized Pinout, a metered-session project with top-ups and unused-credit refunds.
 

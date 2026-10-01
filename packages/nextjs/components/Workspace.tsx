@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { hexlify, randomBytes, formatUnits } from "ethers";
 import {
+  MAX_LABEL_LENGTH,
   checkoutInterface,
+  encodeInvoiceMessage,
+  isLabel,
+  listMerchantInvoices,
   rpc,
   tokenUnits,
   type CheckoutConfig,
+  type Invoice,
   type TokenInfo,
 } from "@saucerpay/checkout";
 import {
@@ -21,7 +26,15 @@ import {
 import { QuotePreview } from "@/components/QuotePreview";
 
 type Settings = { config: CheckoutConfig; token: TokenInfo };
-type Created = { id: string; amount: string; symbol: string; hash: string };
+type Created = {
+  id: string;
+  amount: string;
+  symbol: string;
+  /** Hashscan reference: creation hash, or the label's consensus timestamp. */
+  transaction: string;
+  label?: string;
+  status?: Invoice["status"];
+};
 
 export function Workspace() {
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -30,6 +43,7 @@ export function Workspace() {
   const [walletKind, setWalletKind] = useState<WalletKind>("hashpack");
   const [amount, setAmount] = useState("10");
   const [expiry, setExpiry] = useState("24");
+  const [label, setLabel] = useState("");
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -98,6 +112,19 @@ export function Workspace() {
     const hours = Number(expiry);
     if (!Number.isInteger(hours) || hours < 1 || hours > 720)
       throw new Error("Expiry must be between 1 and 720 hours.");
+    // A label is published after creation; refuse a known failure before paying for the invoice.
+    const text = label.trim();
+    const { topicId } = settings.config;
+    if (text) {
+      if (!connected.publish || !topicId)
+        throw new Error(
+          "Only HashPack can publish labels, and the server needs HEDERA_TOPIC_ID. Clear the label to create the invoice without it.",
+        );
+      if (!isLabel(text))
+        throw new Error(
+          `The label must be a single line of 1 to ${MAX_LABEL_LENGTH} characters.`,
+        );
+    }
     const reference = hexlify(randomBytes(32));
     const expiresAt = Math.floor(Date.now() / 1000) + hours * 3600;
     const sent = await connected.send({
@@ -125,11 +152,63 @@ export function Workspace() {
         id,
         amount: formatUnits(units, settings.token.decimals),
         symbol: settings.token.symbol,
-        hash: receipt.transactionHash,
+        transaction: receipt.transactionHash,
+        status: "open",
       },
       ...list,
     ]);
-    setNotice("Invoice created. Open it and copy the payment link to share.");
+    const success =
+      "Invoice created. Open it and copy the payment link to share.";
+    setNotice(success);
+    // No label to publish; publish and topicId were checked before sending.
+    if (!text || !connected.publish || !topicId) return;
+    setNotice("Invoice created. Approve the label message in HashPack…");
+    try {
+      await connected.publish(
+        topicId,
+        encodeInvoiceMessage(settings.config, id, text),
+      );
+    } catch (error) {
+      setNotice(success);
+      throw new Error(
+        `The invoice was created, but its label was not published: ${message(error)}`,
+      );
+    }
+    setCreated((list) =>
+      list.map((item) => (item.id === id ? { ...item, label: text } : item)),
+    );
+    setLabel("");
+    setNotice(success);
+  }
+  async function loadHistory() {
+    if (!settings) return;
+    const connected = await wallet();
+    const { invoices, truncated } = await listMerchantInvoices(
+      settings.config,
+      connected.address,
+    );
+    const loaded = invoices.map(
+      ({ invoice, label }): Created => ({
+        id: invoice.id,
+        amount: formatUnits(BigInt(invoice.amount), settings.token.decimals),
+        symbol: settings.token.symbol,
+        transaction: label.consensusTimestamp,
+        label: label.text,
+        status: invoice.status,
+      }),
+    );
+    setCreated((list) => [
+      ...list,
+      ...loaded.filter((item) => !list.some((own) => own.id === item.id)),
+    ]);
+    const count = `${loaded.length} labelled invoice${loaded.length === 1 ? "" : "s"}`;
+    setNotice(
+      truncated
+        ? `Showing ${count} from recent activity; older invoices were not read.`
+        : loaded.length
+          ? `Loaded ${count} from the invoice log.`
+          : "No labelled invoices from this account on the invoice log.",
+    );
   }
 
   return (
@@ -253,6 +332,25 @@ export function Workspace() {
                 </select>
               </div>
             </div>
+            {settings?.config.topicId && (
+              <>
+                <label htmlFor="invoice-label">
+                  Label (shown to the payer)
+                </label>
+                <input
+                  id="invoice-label"
+                  value={label}
+                  maxLength={MAX_LABEL_LENGTH}
+                  onChange={(event) => setLabel(event.target.value)}
+                  placeholder="Optional, e.g. Logo design, March"
+                  autoComplete="off"
+                />
+                <p className="muted">
+                  Published on Hedera Consensus Service with HashPack. MetaMask
+                  cannot sign HCS messages.
+                </p>
+              </>
+            )}
             <div className="recipient-row">
               <div>
                 <span className="small-label">RECIPIENT</span>
@@ -332,8 +430,18 @@ export function Workspace() {
       </div>
       <section className="activity">
         <div className="section-heading">
-          <h2>Your session invoices</h2>
-          <span className="muted">{created.length} created</span>
+          <h2>Your invoices</h2>
+          <span className="muted">{created.length} listed</span>
+          {settings?.config.topicId && (
+            <button
+              type="button"
+              className="button secondary small"
+              disabled={!!busy || settings.config.network !== "testnet"}
+              onClick={() => void run("history", loadHistory)}
+            >
+              {busy === "history" ? "Reading invoice log…" : "Load my invoices"}
+            </button>
+          )}
         </div>
         {created.length ? (
           <div className="invoice-list">
@@ -343,11 +451,13 @@ export function Workspace() {
                 <div>
                   <strong>
                     {item.amount} {item.symbol}
+                    {item.status && ` · ${item.status}`}
                   </strong>
+                  {item.label && <small>{item.label}</small>}
                   <small title={item.id}>{shortAddress(item.id)}</small>
                 </div>
                 <a
-                  href={`https://hashscan.io/testnet/transaction/${item.hash}`}
+                  href={`https://hashscan.io/testnet/transaction/${item.transaction}`}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -368,8 +478,8 @@ export function Workspace() {
             <div>
               <strong>Your first invoice starts here.</strong>
               <p>
-                Created invoices appear here during this session. Save each
-                payment link; invoice terms stay on-chain.
+                Invoices created here appear in this list. Labelled invoices can
+                be reloaded from the HCS invoice log; terms stay on-chain.
               </p>
             </div>
           </div>

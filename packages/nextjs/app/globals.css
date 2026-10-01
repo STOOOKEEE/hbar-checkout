@@ -780,6 +780,18 @@ code {
   color: #899973;
   letter-spacing: 0;
 }
+.invoice-label {
+  margin: 0 0 18px;
+}
+.invoice-label blockquote {
+  margin: 6px 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.invoice-label figcaption {
+  font-size: 11px;
+  color: var(--muted);
+}
 .payment-details {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);

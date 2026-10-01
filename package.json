@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.18.3"
   },
   "workspaces": [
     "packages/checkout",
@@ -19,6 +19,7 @@
     "test": "npm run test -w @saucerpay/checkout && npm run test -w @saucerpay/contracts",
     "hardhat:compile": "npm run compile -w @saucerpay/contracts",
     "hardhat:deploy": "npm run deploy -w @saucerpay/contracts --",
+    "hardhat:topic": "npm run topic -w @saucerpay/contracts",
     "next:start": "npm run dev -w @saucerpay/nextjs",
     "next:build": "npm run build -w @saucerpay/nextjs",
     "probe": "tsx scripts/probe.ts",

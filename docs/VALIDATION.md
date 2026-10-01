@@ -2,6 +2,78 @@
 
 [README](../README.md) · [Reviewer walkthrough](REVIEW.md)
 
+This file separates local checks, real protocol reads and actual transactions. Passing the first two does not imply a live payment succeeded. Newest records first; older records keep their original source revisions.
+
+## HCS invoice log — 2026-10-01
+
+Topic [`0.0.10814952`](https://hashscan.io/testnet/topic/0.0.10814952) was created by `npm run hardhat:topic` in transaction `0.0.10669846@1790888761.650379281`: memo `saucerpay:0x140e27Cf63790a558d66C8796A67984d5164055E`, admin key = deployer `0.0.10669846`, no submit key (public).
+
+The trust rule was tested on the paid USDC invoice `0x08c3…7791` (on-chain merchant `0x8EE8…f0fe` = account `0.0.10669846`). Both messages were submitted by throwaway scripts with the local testnet keys, **not** through the HashPack app. [Raw topic messages on the mirror node](https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10814952/messages):
+
+| Seq | Payer account                | Transaction ID                        | Consensus timestamp    | Label                          | Result                  |
+| --- | ---------------------------- | ------------------------------------- | ---------------------- | ------------------------------ | ----------------------- |
+| 1   | `0.0.10669929` (invoice payer) | `0.0.10669929@1790888997.728943908` | `1790889004.545829448` | `FAKE: pay 0.0.666 instead`    | Ignored: not the merchant |
+| 2   | `0.0.10669846` (merchant)    | `0.0.10669846@1790888997.970953852`   | `1790889006.021806835` | `Logo design – SaucerPay demo` | Accepted                |
+
+`readInvoiceLabel` returned the sequence 2 label even though the fake came first in consensus order. `listMerchantInvoices` returned this invoice (paid, labelled) for the merchant and an empty list for the payer. On a local dev server with `HEDERA_TOPIC_ID=0.0.10814952`, `GET /api/invoices/0x08c3…7791` returned `label: { text: "Logo design – SaucerPay demo", consensusTimestamp: "1790889006.021806835", topicId: "0.0.10814952" }`. The label was readable about 7 s after the receipt. Unit tests in [`hcs.test.ts`](../packages/checkout/test/hcs.test.ts) (seven at the time) cover the merchant-only rule, first-wins ordering across pages, malformed/oversized/multi-chunk messages and history filtering. On 2026-10-01 the mirror endpoint above was re-read and still lists exactly these two messages.
+
+These live reads ran against the first version of the reader. It was then hardened after code review: a label must also reach consensus after the merchant's `createInvoice` call, mirror scans are bounded, and `listMerchantInvoices` returns `{ invoices, truncated }` newest first. Both messages above came after the invoice's creation, so the expected result is unchanged, but the live reads have **not** been re-run on the hardened version; its unit tests are the current evidence.
+
+**Not tested:** publishing a label from a real HashPack session (`Wallet.publish`).
+
+## Gas limit measurements — 2026-10-01
+
+The write gas rule changed from 2× to **+25 %, rounded up** (`bufferedGasLimit`; `testnet-payment.cjs` mirrors it). Each row is a real testnet transaction against checkout `0x140e…055E`; fees are the HBAR debited, from the mirror node.
+
+| Method / path               | Estimate | Gas limit           | Gas used    | Fee (tinybar)        | Result                 | Transaction |
+| --------------------------- | -------- | ------------------- | ----------- | -------------------- | ---------------------- | ----------- |
+| `createInvoice` EVM         | 113,247  | 113,247 (bare)      | 113,247     | 9,383,108            | **`INSUFFICIENT_GAS`** | [`0xb030…3810`](https://hashscan.io/testnet/transaction/0xb0308981ab82975a1f1a37bd337e9a25a8dac19f4dffee2ffffdaa421b523810) |
+| `createInvoice` EVM         | 113,262  | 226,524 (old 2×)    | 94,385      | 7,550,800 (80/gas)   | Success                | [`0xfd9a…621a`](https://hashscan.io/testnet/transaction/0xfd9a096c0590465556bee3b07dcf8421512c4f4801024e9384aee4f450f5621a) |
+| `createInvoice` EVM         | 113,247  | 120,000 (probe)     | 94,373      | 7,738,586            | Success                | [`0x15f7…7131`](https://hashscan.io/testnet/transaction/0x15f74d10e634dda42a22b03d7e0adb624b74665ab25e7055b3575272d1107131) |
+| `createInvoice` EVM         | 113,247  | 141,559 (+25 %)     | 94,373      | 7,738,586 (82/gas)   | Success                | [`0x56f7…9862`](https://hashscan.io/testnet/transaction/0x56f756bee17d08b7a427f18da16188df9792214045220d7d6ab9e95b25aa9862) |
+| `createInvoice` native      | 113,247  | 141,559 (+25 %)     | 94,373      | 7,738,586            | Success                | `0.0.10669846-1790889012-437221230` |
+| `payInvoice` EVM            | 234,710  | 469,420 (old 2×)    | 194,248     | 15,539,840 (80/gas)  | Success                | [`0xbc33…3dd8`](https://hashscan.io/testnet/transaction/0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) |
+| `payInvoice` EVM            | 213,722  | 235,095 (×1.1 probe)| 194,248     | 15,928,336           | Success                | [`0x8e8d…8576`](https://hashscan.io/testnet/transaction/0x8e8d75bbb4a1855d5b971d19eb416ba6c2791fe256c411ef856749ba632b8576) |
+| `payInvoice` EVM            | 213,722  | 267,153 (+25 %)     | 194,248     | 15,928,336 (82/gas)  | Success                | [`0xbbff…049e`](https://hashscan.io/testnet/transaction/0xbbffc3fdc44e27ff2b734056574db8a94d7b10bf11eed7749aa004f04812049e) |
+| `payInvoice` native         | 213,722  | 267,153 (+25 %)     | 194,248     | 15,928,336           | Success                | `0.0.10669929-1790889081-524302413` |
+| `cancelInvoice` EVM         | 50,504   | 101,008 (old 2×)    | 42,087      | 3,451,134            | Success                | [`0xa8ee…301d`](https://hashscan.io/testnet/transaction/0xa8ee177d6e5ed7bbf1ab4ee33707c3e0abea9893e19315ca4225e5c19cf5301d) |
+| `cancelInvoice` EVM         | 50,492   | 63,115 (+25 %)      | 42,077      | 3,450,314            | Success                | [`0x5a4e…7bb5`](https://hashscan.io/testnet/transaction/0x5a4e404d9ad70b9f52c803bef6a9cc83e8b5e4429c1d3fe4fb435b237ee37bb5) |
+| `associate()` facade EVM    | 1,023,525| 2,047,050 (old 2×)  | 726,488     | 58,119,040           | Success                | [`0x939f…b2`](https://hashscan.io/testnet/transaction/0x939f0984a84bfda013fbfbc52862d4558db8953fb7efbaf95f27b3b516c10eb2) |
+
+Findings:
+
+- **Fee = gas used × gas price**, on both `EthereumTransaction` and native `ContractExecute` (e.g. 94,385 × 80 = 7,550,800 exactly). Fee differences between rows come from the gas price moving from 80 to 82 tinybar/gas, not from the limit. Lowering the buffer does not lower the fee charged; it lowers the balance a wallet must hold and the maximum fee it displays (the old `associate()` limit represented ~1.76 HBAR at ~86 tinybar/gas, against 0.58 HBAR charged).
+- **The bare estimate is unsafe:** reported gas used is net of storage refunds, but execution needs the gross amount. `createInvoice` failed at its estimate and passed at ×1.06; `payInvoice` passed at ×1.1. +25 % covers both with margin.
+- **Not re-run with +25 %:** the `associate()` facade (its new limit would be 976,052 against 726,488 used under the old limit) and the Hardhat `testnet:payment` script end to end. HashPack uses native `TokenAssociate`, which has no gas limit (0.47 HBAR observed earlier).
+- `npm test -w @saucerpay/checkout` passed 33/33 with the updated `bufferedGasLimit` cases.
+
+## Drop-in payment component and fulfill endpoint — 2026-10-01
+
+Local dev server with the USDC checkout and topic configured. No transaction was created.
+
+- Chromium, `/pay/0x08c3…7791?tx=0xbc33…3dd8` rendered by `PayWithHbar`: "Payment received.", "Settled and verified", 0.43988881 HBAR converted, 0.00219945 HBAR returned, and the HCS description "Logo design – SaucerPay demo" with its topic link. **Download verified receipt** produced the expected JSON. A missing invoice showed "Invoice does not exist on this deployment." with Retry. `/examples` rendered both integration snippets. No page errors.
+- `POST /api/orders/:orderId/fulfill` with curl: bad JSON 400 `INVALID_REQUEST`; bad invoice 400 `INVALID_INVOICE`; bad reference 400 `INVALID_RECEIPT`; unknown order 404; another invoice 409 `INVOICE_MISMATCH`; unindexed hash 202 pending; the deployment transaction as reference 400 `INVALID_RECEIPT`; the real payment `0xbc33…3dd8` 200 with `spentTinybar` 43988881; a repeat call returned the same 200 payload.
+- Four `verifyInvoicePayment` unit tests (pending, paid, wrong invoice/amount, malformed reference rejected before any fetch) pass. `scripts/smoke.mjs` now also checks the fulfill endpoint's 400/404 paths; it passed against that server.
+
+## Node 20.18.3 compatibility — 2026-10-01
+
+In an isolated worktree of commit `df6d11d` with Node v20.18.3 and npm 10.9.8, and no env files:
+
+| Step                                                         | Result                                                                                  |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `npm ci`                                                     | Pass. Non-blocking `EBADENGINE` warnings: vite 7 (via vitest 3), chokidar/readdirp 5, `@wallet-standard/base`, unused React Native peers |
+| `npm run lint`                                               | Pass                                                                                    |
+| `npm test`                                                   | Pass: 22 TypeScript, 11 contract tests                                                  |
+| `npm run build`                                              | Pass: Hardhat compile, Next.js 16.3.5 build, all routes                                 |
+| `PORT=3020 npm start` + `SMOKE_ORIGIN=http://localhost:3020 node scripts/smoke.mjs` | Pass, all OK lines                                               |
+| `/api/config`, `/api/preview?preset=testnet-usdc`, `/api/quote?network=testnet&amount=1` | HTTP 200 with live testnet quotes                            |
+
+`engines.node` was then lowered from `>=22.0.0` to `>=20.18.3` in `package.json`, `template.json` and the lockfile. `npm start -- -p 3020` fails on any Node version (`next start 3020` → "Invalid project directory"); use `PORT`. Keep vitest 3: vitest 4 requires Node ^22.12. The Vercel packaging script still selects the Node 22.x runtime for hosting. The later HCS and fulfill changes were not re-run on Node 20.
+
+## Hosted app on the USDC checkout — 2026-10-01
+
+`https://saucerpay-hedera.vercel.app/api/config` returns testnet token `0.0.5449` and checkout `0x140e27Cf63790a558d66C8796A67984d5164055E`. The public `/api/invoices/0x08c3…7791?tx=0xbc33…3dd8` returned status `paid`, `amountOut` `1000000` and `spentTinybar` `43988881`, so the [paid USDC invoice](https://saucerpay-hedera.vercel.app/pay/0x08c3361023db4b0b2097fe1b82f90ed5477056e570daca65967f81c521357791?tx=0xbc333a625dcc2f71703366f7f45a3277783fb21496f117e7882ab0761efc3dd8) is served by the public site. At that check the hosted build predated the HCS code and returned no label. `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is not set there, so HashPack is unavailable on the hosted app; no real HashPack session has been tested anywhere.
+
 ## Live testnet USDC deployment and payment — 2026-10-01
 
 The reference checkout is deployed on Hedera testnet (chain 296) at
@@ -29,11 +101,11 @@ tinybar (`0.00219945` HBAR) of unused input to the payer. Network fees are
 additional. `npm run submission:check` passed against this payment.
 
 The payment was executed with `npm run testnet:payment`, not through a browser
-wallet. The hosted Vercel environment has **not** yet been switched to token
-`0.0.5449` and this checkout; until it is, the hosted app still serves the
-earlier SAUCE deployment below, and the USDC invoice page
-(`/pay/0x08c3…7791?tx=0xbc33…3dd8`) is not available there. Browser/wallet UI
-payment in USDC and mainnet signing have **not** been exercised live.
+wallet. When this record was written, the hosted app still served the earlier
+SAUCE deployment; it was switched to this checkout later the same day (see
+[Hosted app on the USDC checkout](#hosted-app-on-the-usdc-checkout--2026-10-01)).
+Browser/wallet UI payment in USDC and mainnet signing have **not** been
+exercised live.
 
 ## Native Hedera transaction path (HashPack code) — 2026-10-01
 
@@ -106,7 +178,8 @@ ignored local env files, with no key on Vercel.
 
 The first invoice submission failed with `INSUFFICIENT_GAS`: the mirror relay
 estimated `113,262` gas and the transaction exhausted exactly that limit.
-The script and wallet UI now send writes with a 2× gas-limit margin. Invoice
+The script and wallet UI then sent writes with a 2× gas-limit margin (since
+reduced to +25 %, see [gas measurements](#gas-limit-measurements--2026-10-01)). Invoice
 creation and payments with one and then two accounts succeeded after that
 change. An EVM transfer to the initially absent payer account also exhausted
 its gas. A native Hedera SDK transfer created and funded that account successfully.
@@ -173,13 +246,9 @@ No local template override or pre-existing node_modules was used.
 The following historical records retain their original source revisions. This
 documentation walkthrough did not deploy a contract or submit a payment.
 
-## Scope
+## Local checks (historical, 2026-09-22)
 
-This file distinguishes local checks, real protocol reads and actual transactions. Passing the first two does not imply a live payment succeeded.
-
-## Local checks
-
-Validated on Node.js 22.23.2 and npm 10.9.8:
+Validated on Node.js 22.23.2 and npm 10.9.8 at that revision:
 
 | Check                                                       | Result                                                                                                                                 |
 | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |

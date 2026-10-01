@@ -1,13 +1,36 @@
 import {
   assertDeployment,
   readInvoice,
+  readInvoiceLabel,
   readToken,
-  readTransactionReceipt,
-  verifyPaymentReceipt,
+  verifyInvoicePayment,
   CheckoutError,
+  type CheckoutConfig,
 } from "@saucerpay/checkout";
 import { getConfig, errorResponse } from "@/lib/server";
 export const dynamic = "force-dynamic";
+
+/** With a `?tx=` reference, the response only carries a verified, settled payment. */
+async function readInvoiceState(
+  config: CheckoutConfig,
+  id: string,
+  reference: string | null,
+) {
+  if (!reference) {
+    await assertDeployment(config);
+    return { invoice: await readInvoice(config, id), payment: undefined };
+  }
+  const result = await verifyInvoicePayment(config, {
+    invoiceId: id,
+    reference,
+  });
+  if (result.status === "pending")
+    throw new CheckoutError(
+      "PENDING_RECEIPT",
+      "Receipt is not indexed yet. Refresh shortly.",
+    );
+  return { invoice: result.invoice, payment: result.payment };
+}
 
 export async function GET(
   request: Request,
@@ -15,28 +38,25 @@ export async function GET(
 ) {
   try {
     const config = getConfig();
-    await assertDeployment(config);
     const { id } = await context.params;
-    const [invoice, token] = await Promise.all([
-      readInvoice(config, id),
+    const reference = new URL(request.url).searchParams.get("tx");
+    const [{ invoice, payment }, token] = await Promise.all([
+      readInvoiceState(config, id, reference),
       readToken(config),
     ]);
-    const reference = new URL(request.url).searchParams.get("tx");
-    let payment;
-    if (reference) {
-      const receipt = await readTransactionReceipt(config, reference);
-      if (!receipt)
-        throw new CheckoutError(
-          "PENDING_RECEIPT",
-          "Receipt is not indexed yet. Refresh shortly.",
-        );
-      payment = verifyPaymentReceipt(config, invoice, receipt);
-    }
+    // Merchant-authored HCS metadata is optional: a mirror outage omits it.
+    const label = await readInvoiceLabel(config, invoice).catch(
+      (error: unknown) => {
+        if (error instanceof CheckoutError) return null;
+        throw error;
+      },
+    );
     return Response.json({
       config,
       invoice,
       token,
-      ...(payment ? { payment } : {}),
+      payment,
+      label: label ?? undefined,
     });
   } catch (error) {
     return errorResponse(error);

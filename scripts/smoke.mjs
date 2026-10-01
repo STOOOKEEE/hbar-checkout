@@ -28,3 +28,21 @@ const unknown = await fetch(origin + "/api/preview?preset=__proto__");
 assert.equal(unknown.status, 400);
 assert.equal((await unknown.json()).code, "INVALID_PRESET");
 console.log("OK preview cannot select an arbitrary asset or quote an invoice");
+const fulfill = (orderId, body) =>
+  fetch(`${origin}/api/orders/${orderId}/fulfill`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+const malformed = await fulfill("example-order", {
+  invoiceId: "0x1234",
+  reference: "0x" + "ab".repeat(32),
+});
+assert.equal(malformed.status, 400);
+assert.equal((await malformed.json()).code, "INVALID_INVOICE");
+const unknownOrder = await fulfill("missing-order", {
+  invoiceId: "0x" + "ab".repeat(32),
+  reference: "0.0.1234@1700000000.000000001",
+});
+assert.equal(unknownOrder.status, 404);
+console.log("OK fulfillment rejects malformed input and unknown orders");

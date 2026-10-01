@@ -19,6 +19,8 @@ export type CheckoutConfig = {
   tokenId: string;
   token: string;
   checkout: string | null;
+  /** Public HCS invoice log (0.0.N); null when not configured. */
+  topicId: string | null;
 };
 
 export const CHECKOUT_ABI = [
@@ -50,14 +52,21 @@ export class CheckoutError extends Error {
   }
 }
 
-/** Hedera mirror-node estimates may be too tight for submitted writes. */
+/**
+ * Gas limit for a write from its `eth_estimateGas` result. Hedera charges the
+ * gas actually used (EVM and native ContractExecute alike), so the buffer only
+ * sets the balance a wallet must hold up front. The bare estimate is too tight:
+ * on testnet createInvoice hit INSUFFICIENT_GAS at exactly its 113247 estimate
+ * but succeeded at 120000, reporting 94373 used after refunds; payInvoice
+ * succeeded at 1.1x its estimate. +25% (rounded up) covers both with margin.
+ */
 export function bufferedGasLimit(estimate: bigint): bigint {
   if (estimate <= 0n)
     throw new CheckoutError(
       "INVALID_GAS_ESTIMATE",
       "Cannot estimate transaction gas.",
     );
-  return estimate * 2n;
+  return (estimate * 5n + 3n) / 4n;
 }
 
 export function entityAddress(id: string): string {
@@ -74,6 +83,7 @@ export function networkConfig(
   network: Network,
   checkout?: string,
   tokenId?: string,
+  topicId?: string,
 ): CheckoutConfig {
   if (network !== "mainnet" && network !== "testnet")
     throw new CheckoutError("INVALID_NETWORK", "Choose testnet or mainnet.");
@@ -82,6 +92,7 @@ export function networkConfig(
       "INVALID_ADDRESS",
       "Invalid checkout contract address.",
     );
+  if (topicId) entityAddress(topicId);
   const main = network === "mainnet";
   const selectedToken = tokenId || (main ? "0.0.456858" : "0.0.5449");
   return {
@@ -94,6 +105,7 @@ export function networkConfig(
     tokenId: selectedToken,
     token: entityAddress(selectedToken),
     checkout: checkout ? getAddress(checkout) : null,
+    topicId: topicId || null,
   };
 }
 
@@ -207,7 +219,7 @@ export function invoiceId(merchant: string, reference: string): string {
   );
 }
 
-async function requestJson(
+export async function requestJson(
   url: string,
   init?: RequestInit,
   nullOnNotFound = false,
@@ -266,6 +278,21 @@ export type TransactionReceipt = {
   logs: { address: string; topics: string[]; data: string }[];
 };
 
+const TRANSACTION_HASH = /^0x[0-9a-fA-F]{64}$/;
+const NATIVE_TRANSACTION_ID = /^(0\.0\.\d+)[@-](\d+)[.-](\d+)$/;
+/** Format check only: a well-formed reference is not proof of payment. */
+export function validatePaymentReference(reference: string): string {
+  if (
+    !TRANSACTION_HASH.test(reference) &&
+    !NATIVE_TRANSACTION_ID.test(reference)
+  )
+    throw new CheckoutError(
+      "INVALID_RECEIPT",
+      "Use a transaction hash or Hedera transaction ID.",
+    );
+  return reference;
+}
+
 /**
  * Accepts an EVM transaction hash (MetaMask path) or a Hedera transaction ID
  * (`0.0.x@s.n` or mirror `0.0.x-s-n`, native HashPack path). Returns null
@@ -276,7 +303,7 @@ export async function readTransactionReceipt(
   reference: string,
 ): Promise<TransactionReceipt | null> {
   let hash = reference;
-  const native = /^(0\.0\.\d+)[@-](\d+)[.-](\d+)$/.exec(reference);
+  const native = NATIVE_TRANSACTION_ID.exec(reference);
   if (native) {
     const result = (await requestJson(
       `${config.mirrorUrl}/contracts/results/${native[1]}-${native[2]}-${native[3]}`,
@@ -286,7 +313,7 @@ export async function readTransactionReceipt(
     if (!result) return null;
     hash = String(result.hash);
   }
-  if (!/^0x[0-9a-fA-F]{64}$/.test(hash))
+  if (!TRANSACTION_HASH.test(hash))
     throw new CheckoutError(
       "INVALID_RECEIPT",
       "Use a transaction hash or Hedera transaction ID.",
@@ -655,3 +682,31 @@ export function verifyPaymentReceipt(
     "No matching InvoicePaid event was found.",
   );
 }
+
+export type InvoicePayment =
+  | { status: "paid"; invoice: Invoice; payment: PaymentReceipt }
+  | { status: "pending"; invoice: Invoice };
+/**
+ * Server-side fulfillment gate: proves that `reference` paid `invoiceId` on
+ * the configured checkout. Pending until the receipt is indexed and the
+ * on-chain invoice reads as paid; throws CheckoutError for any mismatch.
+ */
+export async function verifyInvoicePayment(
+  config: CheckoutConfig,
+  input: { invoiceId: string; reference: string },
+): Promise<InvoicePayment> {
+  validateInvoiceId(input.invoiceId);
+  validatePaymentReference(input.reference);
+  await assertDeployment(config);
+  const [invoice, receipt] = await Promise.all([
+    readInvoice(config, input.invoiceId),
+    readTransactionReceipt(config, input.reference),
+  ]);
+  if (!receipt) return { status: "pending", invoice };
+  const payment = verifyPaymentReceipt(config, invoice, receipt);
+  // A matching InvoicePaid event implies the paid state; an older read is only lag.
+  if (invoice.status !== "paid") return { status: "pending", invoice };
+  return { status: "paid", invoice, payment };
+}
+
+export * from "./hcs";
